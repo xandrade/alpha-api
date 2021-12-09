@@ -1,5 +1,6 @@
-# docker run --name api-tcp5000 --restart unless-stopped -e PORT=5000 -e HOST="0.0.0.0" -p 5000:5000 -v "/mnt/d/Dropbox/Python Projects/alpha/app":"/usr/src/api" -d api 
-
+# docker build -t api .
+# docker run --name api-tcp5000 --restart unless-stopped -e PORT=5000 -e HOST="0.0.0.0" -p 5000:5000 -v "/mnt/d/Dropbox/Python Projects/alpha-api/db":"/usr/src/api/db" -d api 
+# docker stop api-tcp5000 && docker rm api-tcp5000
 
 # ---- Base Python ----
 FROM python:3.10-slim-buster AS base
@@ -56,4 +57,5 @@ ENV PATH=".venv/bin:$PATH"
 
 # Run the application:
 #CMD ["uvicorn", "--host", "0.0.0.0", "--port", "5000",  "main:app"]
-CMD ["python3", "main.py"]
+#CMD ["python3", "main.py"]
+CMD ["hypercorn", "--bind", "0.0.0.0:5000", "main:app", "-w", "1", "--worker-class", "uvloop"]

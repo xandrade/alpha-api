@@ -40,14 +40,8 @@ if __name__ == "__main__":
 
     HOST = os.getenv("HOST", "0.0.0.0")
     PORT = os.getenv("PORT", 5000)
-    DB_URL = os.getenv("DB_URL", "sqlite://db.sqlite3")
-
-    app.config["DB_URL"] = DB_URL
 
     app.run(
-        # host=HOST,
+        host=HOST,
         port=PORT,
-        # proxy_headers=True,
-        # log_level="debug",
-        # reload=True
     )
