@@ -1,8 +1,6 @@
 quart
-uvicorn
+tortoise-orm[asyncpg]
 uvloop
-tortoise
+hypercorn[uvloop]
 email_validator
 rsa
-tortoise-orm[asyncpg]
-hypercorn[uvloop]
