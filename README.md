@@ -32,3 +32,9 @@ API for Alpha system
 2. Activate environment `$ source .venv/bin/activate`
 3. Go to app folder `$ cd ./alpha-api/app`
 4. Run `$ hypercorn --bind '0.0.0.0:5000'  main:app -w 1 --worker-class uvloop`
+
+
+curl --header "Content-Type: application/json" \
+  --request POST \
+  --data '{"name":"antonio","email":"test@google.com"}' \
+  https://meditationbooster.org/api/friend
