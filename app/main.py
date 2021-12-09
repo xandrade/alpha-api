@@ -18,8 +18,17 @@ else:
     asyncio.set_event_loop(uvloop.new_event_loop())
 
 logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 app = Quart(__name__)
+
+register_tortoise(
+    app,
+    db_url="sqlite://db.sqlite3",
+    modules={"models": ["models"]},
+    generate_schemas=True,
+)
+
 
 app.register_blueprint(api)
 
@@ -32,12 +41,6 @@ if __name__ == "__main__":
 
     app.config["DB_URL"] = DB_URL
 
-    register_tortoise(
-        app,
-        db_url=app.config["DB_URL"],
-        modules={"models": ["models"]},
-        generate_schemas=True,
-    )
 
     uvicorn.run(
         app,
@@ -45,5 +48,7 @@ if __name__ == "__main__":
         port=PORT,
         proxy_headers=True,
         loop="asyncio",
-        # log_level="trace",
+        #timeout_keep_alive=0,
+        log_level="trace",
+        #reload=True
     )
