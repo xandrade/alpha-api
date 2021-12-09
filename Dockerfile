@@ -58,4 +58,4 @@ ENV PATH=".venv/bin:$PATH"
 # Run the application:
 #CMD ["uvicorn", "--host", "0.0.0.0", "--port", "5000",  "main:app"]
 #CMD ["python3", "main.py"]
-CMD ["hypercorn", "--bind", "0.0.0.0:5000", "main:app", "-w", "1", "--worker-class", "uvloop"]
+CMD ["hypercorn", "--bind", "0.0.0.0:5000", "main:app", "-w", "2", "--worker-class", "uvloop"]
