@@ -33,7 +33,11 @@ async def add_friend():
         email = valid.email
     except EmailNotValidError as e:
         return jsonify(
-            {"status": "error", "message": "Uh Oh! Something went wrong"}, 400
+            {
+                "status": "error",
+                "message": "Uh Oh! Something went wrong",
+            },
+            400,
         )
 
     friend = await Friends.create(name=name, email=email)
