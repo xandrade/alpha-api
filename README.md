@@ -1,5 +1,6 @@
 # alpha-api
 
+API for Alpha system
 
 # Cloning the repository
 
