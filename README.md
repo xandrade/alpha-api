@@ -22,5 +22,5 @@
 
 1. Go to the project folder `$ cd path_to_project`
 2. Activate environment `$ source .venv/bin/activate`
-3. Go to app folder `$ cd ./pegasus/app`
+3. Go to app folder `$ cd ./alpha-api/app`
 4. Run `$ uvicorn main:app --port 5000 --reload`
