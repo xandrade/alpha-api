@@ -1,15 +1,14 @@
 import os
-import logging
 import threading
+import logging
 import asyncio
 
 from quart import Quart
+
 from tortoise.contrib.quart import register_tortoise
-import uvicorn
+
+
 import uvloop
-
-
-from api import api
 
 
 if threading.current_thread() is threading.main_thread():
@@ -17,20 +16,24 @@ if threading.current_thread() is threading.main_thread():
 else:
     asyncio.set_event_loop(uvloop.new_event_loop())
 
+
 logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
+
 
 app = Quart(__name__)
 
+
+from api import api
+
+app.register_blueprint(api)
+
+
 register_tortoise(
     app,
-    db_url="sqlite://db.sqlite3",
+    db_url="sqlite://./db/db.sqlite3",
     modules={"models": ["models"]},
     generate_schemas=True,
 )
-
-
-app.register_blueprint(api)
 
 
 if __name__ == "__main__":
@@ -41,14 +44,10 @@ if __name__ == "__main__":
 
     app.config["DB_URL"] = DB_URL
 
-
-    uvicorn.run(
-        app,
-        host=HOST,
+    app.run(
+        # host=HOST,
         port=PORT,
-        proxy_headers=True,
-        loop="asyncio",
-        #timeout_keep_alive=0,
-        log_level="trace",
-        #reload=True
+        # proxy_headers=True,
+        # log_level="debug",
+        # reload=True
     )

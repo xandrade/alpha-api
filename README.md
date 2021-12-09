@@ -24,4 +24,8 @@ API for Alpha system
 1. Go to the project folder `$ cd path_to_project`
 2. Activate environment `$ source .venv/bin/activate`
 3. Go to app folder `$ cd ./alpha-api/app`
-4. Run `$ uvicorn main:app --port 5000 --reload`
+4. Run `$ python main.py`
+
+## Running in production
+
+`$ hypercorn --bind '0.0.0.0:5000'  main:app -w 1 --worker-class uvloop`

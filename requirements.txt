@@ -5,3 +5,4 @@ tortoise
 email_validator
 rsa
 tortoise-orm[asyncpg]
+hypercorn[uvloop]
