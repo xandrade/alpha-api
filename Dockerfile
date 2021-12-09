@@ -32,7 +32,7 @@ RUN pip install -U setuptools pip && \
     rm ./requirements.txt
 
 # ---- Copy Files/Build ----
-COPY ./app/*.py .
+COPY ./app/*.py /.
 
 
 #HEALTHCHECK --interval=5m --timeout=3s \
@@ -47,7 +47,7 @@ RUN apt-get -y update  && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR "/usr/src/api"
-COPY --from=base /usr/src/api/ .
+COPY --from=base /usr/src/api/ /.
 ENV PATH=".venv/bin:$PATH"
 
 # Switch to non-root user:
