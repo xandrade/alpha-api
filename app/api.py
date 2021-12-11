@@ -50,7 +50,7 @@ async def list_all():
             }
         )
     else:
-        return {}, 403
+        return forbidden()
 
 
 @api.route("/friend", methods=["POST"])
