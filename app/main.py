@@ -2,9 +2,9 @@ import os
 import threading
 import logging
 import asyncio
+import secrets
 
 from quart import Quart
-
 from tortoise.contrib.quart import register_tortoise
 
 
@@ -21,7 +21,6 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 app = Quart(__name__)
-
 
 from api import api
 

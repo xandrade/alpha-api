@@ -4,3 +4,5 @@ uvloop
 hypercorn[uvloop]
 email_validator
 rsa
+pyotp
+qrcode

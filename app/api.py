@@ -1,23 +1,54 @@
-from typing import final
+from datetime import timedelta
+
 from models import Friends
 
-from quart import Blueprint, jsonify, request
+from quart import Blueprint, jsonify, request, Response
 from email_validator import validate_email, caching_resolver, EmailNotValidError
-
-import asyncio
-
+import pyotp
 
 api = Blueprint("api", __name__, url_prefix="/api")
+
+secret = pyotp.random_base32()
+
+uri = pyotp.totp.TOTP(secret).provisioning_uri(
+    name="Antonio", issuer_name="api.meditationbooster.org"
+)
+print(uri)
+
+import io
+import qrcode
+
+qr = qrcode.QRCode()
+qr.add_data(uri)
+f = io.StringIO()
+qr.print_ascii(out=f)
+f.seek(0)
+print(f.read())
+
+
+@api.app_errorhandler(403)
+def forbidden():
+    return Response(
+        "Forbidden",
+        status=403,
+        headers={"WWW-Authenticate": "Basic realm='Login Required'"},
+    )
 
 
 @api.route("/", methods=["GET"])
 async def list_all():
-    friends = await Friends.all()
-    return jsonify(
-        {
-            "friend": [str(items) for friend in friends for items in friend],
-        }
-    )
+
+    totp = pyotp.TOTP(secret)
+    if request.args.get("code") == totp.now():
+
+        friends = await Friends.all()
+        return jsonify(
+            {
+                "friend": [str(items) for friend in friends for items in friend],
+            }
+        )
+    else:
+        return {}, 403
 
 
 @api.route("/friend", methods=["POST"])
