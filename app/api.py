@@ -5,6 +5,8 @@ from models import Friends
 from quart import Blueprint, jsonify, request, Response
 from email_validator import validate_email, caching_resolver, EmailNotValidError
 import pyotp
+from loguru import logger
+
 
 api = Blueprint("api", __name__, url_prefix="/api")
 
@@ -13,7 +15,7 @@ secret = pyotp.random_base32()
 uri = pyotp.totp.TOTP(secret).provisioning_uri(
     name="Antonio", issuer_name="api.meditationbooster.org"
 )
-print(uri)
+logger.info(uri)
 
 import io
 import qrcode

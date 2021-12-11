@@ -6,7 +6,7 @@ import secrets
 
 from quart import Quart
 from tortoise.contrib.quart import register_tortoise
-
+from loguru import logger
 
 import uvloop
 
