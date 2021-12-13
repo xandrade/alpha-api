@@ -103,4 +103,5 @@ async def add_friend():
 async def ref():
     data = await request.get_json()
     url = data.get("url")
+    logger.info(url)
     return redirect(location=url, code=301)
