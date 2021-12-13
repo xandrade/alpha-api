@@ -102,5 +102,6 @@ async def add_friend():
 @api.route("/ref", methods=["GET"])
 async def ref():
     url = request.args.get("url")
+    request.x_forwarded_for = "here.com"
     logger.info(url)
-    return redirect(location=url, code=301)
+    return redirect(location=url, code=308)
