@@ -108,7 +108,7 @@ async def ref():
 
     return f"""
     <head>
-    <meta http-equiv="refresh" content="5; URL="{url}" />
+    <meta http-equiv="refresh" content="5; URL={url}" />
     </head>
     <body>
     <p>If you are not redirected in five seconds, <a href="{url}">click here</a>.</p>
