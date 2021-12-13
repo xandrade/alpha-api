@@ -99,6 +99,8 @@ async def add_friend():
     )
 
 
-@api.route("/ref/<link>", methods=["GET"])
-async def ref(link):
-    return redirect(location=link, code=301)
+@api.route("/ref", methods=["GET"])
+async def ref():
+    data = await request.get_json()
+    url = data.get("url")
+    return redirect(location=url, code=301)
