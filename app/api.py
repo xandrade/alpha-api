@@ -1,5 +1,7 @@
 from datetime import timedelta
 
+from quart.wrappers import response
+
 from models import Friends
 
 from quart import Blueprint, jsonify, request, Response, redirect
@@ -102,6 +104,5 @@ async def add_friend():
 @api.route("/ref", methods=["GET"])
 async def ref():
     url = request.args.get("url")
-    request.x_forwarded_for = "here.com"
     logger.info(url)
-    return redirect(location=url, code=308)
+    return redirect(location=url, code=200)
