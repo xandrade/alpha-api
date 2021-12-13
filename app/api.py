@@ -105,4 +105,12 @@ async def add_friend():
 async def ref():
     url = request.args.get("url")
     logger.info(url)
-    return redirect(location=url, code=200)
+
+    return f"""
+    <head>
+    <meta http-equiv="refresh" content="5; URL="{url}" />
+    </head>
+    <body>
+    <p>If you are not redirected in five seconds, <a href="{url}">click here</a>.</p>
+    </body>
+    """
