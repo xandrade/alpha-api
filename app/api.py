@@ -2,7 +2,7 @@ from datetime import timedelta
 
 from models import Friends
 
-from quart import Blueprint, jsonify, request, Response
+from quart import Blueprint, jsonify, request, Response, redirect
 from email_validator import validate_email, caching_resolver, EmailNotValidError
 import pyotp
 from loguru import logger
@@ -31,8 +31,23 @@ print(f.read())
 @api.app_errorhandler(403)
 def forbidden():
     return Response(
-        "Forbidden",
-        status=403,
+        jsonify(
+            {
+                "error": {
+                    "code": 403,
+                    "message": "The request is missing a valid API key.",
+                    "errors": [
+                        {
+                            "message": "The request is missing a valid API key.",
+                            "domain": "global",
+                            "reason": "forbidden",
+                        }
+                    ],
+                    "status": "PERMISSION_DENIED",
+                }
+            }
+        ),
+        status=403,  # HTTP Status 403 Forbidden
         headers={"WWW-Authenticate": "Basic realm='Login Required'"},
     )
 
@@ -82,3 +97,8 @@ async def add_friend():
         },
         200,
     )
+
+
+@api.route("/ref/<link>", methods=["GET"])
+async def ref(link):
+    return redirect(location=link, code=301)
