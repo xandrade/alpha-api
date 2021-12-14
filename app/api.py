@@ -25,9 +25,12 @@ import qrcode
 qr = qrcode.QRCode()
 qr.add_data(uri)
 f = io.StringIO()
-qr.print_ascii(out=f)
+qr.print_ascii(out=f, ytt=True)
+printed = f.getvalue()
 f.seek(0)
 print(f.read())
+logger.info(f.read())
+logger.info(printed)
 
 
 @api.app_errorhandler(403)
