@@ -70,7 +70,26 @@ async def list_all():
             }
         )
     else:
-        return forbidden()
+        return Response(
+            jsonify(
+                {
+                    "error": {
+                        "code": 403,
+                        "message": "The request is missing a valid API key.",
+                        "errors": [
+                            {
+                                "message": "The request is missing a valid API key.",
+                                "domain": "global",
+                                "reason": "forbidden",
+                            }
+                        ],
+                        "status": "PERMISSION_DENIED",
+                    }
+                }
+            ),
+            status=403,  # HTTP Status 403 Forbidden
+            headers={"WWW-Authenticate": "Basic realm='Login Required'"},
+        )
 
 
 @api.route("/friend", methods=["POST"])
