@@ -4,7 +4,7 @@ from quart.wrappers import response
 
 from models import Friends
 
-from quart import Blueprint, jsonify, request, Response, redirect
+from quart import Blueprint, jsonify, request, Response, make_response
 from email_validator import validate_email, caching_resolver, EmailNotValidError
 import pyotp
 from loguru import logger
@@ -70,26 +70,7 @@ async def list_all():
             }
         )
     else:
-        return Response(
-            jsonify(
-                {
-                    "error": {
-                        "code": 403,
-                        "message": "The request is missing a valid API key.",
-                        "errors": [
-                            {
-                                "message": "The request is missing a valid API key.",
-                                "domain": "global",
-                                "reason": "forbidden",
-                            }
-                        ],
-                        "status": "PERMISSION_DENIED",
-                    }
-                }
-            ),
-            status=403,  # HTTP Status 403 Forbidden
-            headers={"WWW-Authenticate": "Basic realm='Login Required'"},
-        )
+        return await make_response(forbidden)
 
 
 @api.route("/friend", methods=["POST"])
