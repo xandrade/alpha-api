@@ -25,7 +25,7 @@ import qrcode
 qr = qrcode.QRCode()
 qr.add_data(uri)
 f = io.StringIO()
-qr.print_ascii(out=f, ytt=True)
+qr.print_ascii(out=f)
 printed = f.getvalue()
 f.seek(0)
 print(f.read())
