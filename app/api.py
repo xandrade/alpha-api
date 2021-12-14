@@ -5,6 +5,7 @@ from quart.wrappers import response
 from models import Friends
 
 from quart import Blueprint, jsonify, request, Response, make_response
+from quart_cors import cors, route_cors
 from email_validator import validate_email, caching_resolver, EmailNotValidError
 import pyotp
 from loguru import logger
@@ -26,11 +27,11 @@ qr = qrcode.QRCode()
 qr.add_data(uri)
 f = io.StringIO()
 qr.print_ascii(out=f)
-printed = f.getvalue()
+# printed = f.getvalue()
 f.seek(0)
 print(f.read())
 logger.info(f.read())
-logger.info(printed)
+# logger.info(printed)
 
 
 @api.app_errorhandler(403)
@@ -58,6 +59,7 @@ def forbidden():
 
 
 @api.route("/", methods=["GET"])
+@route_cors(allow_origin="https://meditationbooster.org/")
 async def list_all():
 
     totp = pyotp.TOTP(secret)
@@ -70,7 +72,7 @@ async def list_all():
             }
         )
     else:
-        return await make_response(forbidden)
+        return await api.make_response(forbidden)
 
 
 @api.route("/friend", methods=["POST"])

@@ -7,3 +7,4 @@ rsa
 pyotp
 qrcode
 loguru
+Quart-CORS

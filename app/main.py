@@ -5,6 +5,7 @@ import asyncio
 import secrets
 
 from quart import Quart
+from quart_cors import cors, route_cors
 from tortoise.contrib.quart import register_tortoise
 from loguru import logger
 
@@ -25,6 +26,7 @@ app = Quart(__name__)
 from api import api
 
 app.register_blueprint(api)
+api = cors(api)
 
 
 register_tortoise(
