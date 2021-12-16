@@ -141,7 +141,6 @@ async def ref():
 
 
 @api.route("/gallery", methods=["GET"])
-@api.route("/gallery/", methods=["GET"])
 @api.route("/gallery/<int:video_pairs>", methods=["GET"])
 async def gallery(video_pairs=3):
 
@@ -184,7 +183,7 @@ async def gallery(video_pairs=3):
         "https://www.youtube.com/watch?v=GnuHsc1S5vY",
     ]
 
-    random_video = random.choice(videos, video_pairs * 2)
+    random_video = random.sample(videos, video_pairs * 2)
 
     for i in range(video_pairs):
         left, right = random_video[i * 2], random_video[i * 2 + 1]
