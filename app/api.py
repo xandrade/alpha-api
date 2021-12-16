@@ -140,22 +140,12 @@ async def ref():
     """
 
 
+@api.route("/gallery", methods=["GET"])
+@api.route("/gallery/", methods=["GET"])
 @api.route("/gallery/<int:video_pairs>", methods=["GET"])
 async def gallery(video_pairs=3):
 
-    _html = f"""
-                <article class="from-left">
-					<iframe width="100%" height="350" src="https://www.youtube.com/embed/VIDEOID#1?controls=0"
-						title="YouTube video player" frameborder="0"
-						allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
-				</article>
-				<article class="from-right">
-					<iframe width="100%" height="350"
-						src="https://www.youtube.com/embed/VIDEOID#2?controls=0&autoplay=0"
-						title="YouTube video player" frameborder="0"
-						allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
-				</article>
-    """
+    html = ""
 
     videos = [
         "https://www.youtube.com/watch?v=pAVk0tLJvA0",
@@ -193,7 +183,8 @@ async def gallery(video_pairs=3):
         "https://www.youtube.com/watch?v=QMyahx3soiM",
         "https://www.youtube.com/watch?v=GnuHsc1S5vY",
     ]
-    random_video = random.choice(videos, k=video_pairs * 2)
+
+    random_video = random.choice(videos, video_pairs * 2)
 
     for i in range(video_pairs):
         left, right = random_video[i * 2], random_video[i * 2 + 1]
