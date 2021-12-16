@@ -140,7 +140,8 @@ async def ref():
     """
 
 
-@api.route("/gallery/<int:video_pairs>", methods=["GET"])
+@api.route("/gallery", methods=["GET"])
+@api.route("/gallery/<int: video_pairs>", methods=["GET"])
 async def gallery(video_pairs=3):
 
     html = ""
