@@ -141,10 +141,13 @@ async def ref():
 
 
 @api.route("/gallery", methods=["GET"], defaults={"video_pairs": 3})
-@api.route("/gallery/<int:video_pairs>", methods=["GET"])
+@api.route("/gallery/<int:video_pairs>", methods=["GET"], defaults={"video_pairs": 3})
 async def gallery(video_pairs):
 
     html = ""
+
+    if video_pairs < 1:
+        video_pairs = 1
 
     videos = [
         "pAVk0tLJvA0",
