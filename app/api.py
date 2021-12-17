@@ -219,12 +219,16 @@ async def gallery(video_pairs):
 @api.websocket("/ws")
 async def ws():
     while True:
-        data = await websocket.receive_json()
-        if data.get("type") == "subscribe":
-            if requests_queue.empty():
-                build_requests_queue()
-            request = await requests_queue.get()
-            await websocket.send_json(request.to_dict())
+        try:
+            data = await websocket.receive_json()
+            if data.get("type") == "subscribe":
+                if await requests_queue.empty():
+                    build_requests_queue()
+                request = await requests_queue.get()
+                await websocket.send_json(request.to_dict())
+        except asyncio.CancelledError:
+            print('Client disconnected')
+            raise
 
 
 clients = set()
@@ -269,10 +273,9 @@ def collect_websocket(func):
 
 @api.websocket("/api/v2/ws")
 @collect_websocket
-async def ws2():
-    global requests_queue
+async def ws2(queue):
     while True:
-        data = await requests_queue.get()
+        data = await queue.get()
         await websocket.send(data)
 
 
