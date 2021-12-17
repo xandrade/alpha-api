@@ -222,7 +222,7 @@ async def ws():
         try:
             data = await websocket.receive_json()
             if data.get("type") == "subscribe":
-                if await requests_queue.empty():
+                if requests_queue.empty():
                     build_requests_queue()
                 request = await requests_queue.get()
                 await websocket.send_json(request.to_dict())
