@@ -287,7 +287,8 @@ async def html():
         <script type="text/javascript">
         
             function connect() {
-                var ws = new WebSocket('ws://' + document.domain + ':' + location.port + '/api/ws');
+                //var ws = new WebSocket('wss://' + document.domain + ':' + location.port + '/api/ws');
+                var ws = new WebSocket('wss://meditationbooster.org/api/ws');
                 
                 ws.onopen = function() {
                     ws.send(JSON.stringify({
