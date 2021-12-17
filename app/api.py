@@ -1,11 +1,13 @@
 from datetime import timedelta
 import random
-
-from quart.wrappers import response
+import asyncio
+from functools import wraps
+import json
 
 from models import Friends
+from data import ViewItem
 
-from quart import Blueprint, jsonify, request, Response, make_response
+from quart import Blueprint, jsonify, request, Response, websocket
 from quart_cors import cors, route_cors
 from email_validator import validate_email, caching_resolver, EmailNotValidError
 import pyotp
@@ -140,14 +142,7 @@ async def ref():
     """
 
 
-@api.route("/gallery", methods=["GET"], defaults={"video_pairs": 3})
-@api.route("/gallery/<int:video_pairs>", methods=["GET"], defaults={"video_pairs": 3})
-async def gallery(video_pairs):
-
-    html = ""
-
-    if video_pairs < 1:
-        video_pairs = 1
+def get_videos():
 
     videos = [
         "pAVk0tLJvA0",
@@ -185,6 +180,19 @@ async def gallery(video_pairs):
         "QMyahx3soiM",
         "GnuHsc1S5vY",
     ]
+    return videos
+
+
+@api.route("/gallery", methods=["GET"], defaults={"video_pairs": 3})
+@api.route("/gallery/<int:video_pairs>", methods=["GET"], defaults={"video_pairs": 3})
+async def gallery(video_pairs):
+
+    html = ""
+
+    if video_pairs < 1:
+        video_pairs = 1
+
+    videos = get_videos()
 
     random_video = random.sample(videos, video_pairs * 2)
 
@@ -206,3 +214,119 @@ async def gallery(video_pairs):
         html += _html
 
     return html, 200
+
+
+@api.websocket("/ws")
+async def ws():
+    while True:
+        data = await websocket.receive_json()
+        if data.get("type") == "subscribe":
+            if requests_queue.empty():
+                build_requests_queue()
+            request = await requests_queue.get()
+            await websocket.send_json(request.to_dict())
+
+
+clients = set()
+requests_queue = asyncio.Queue()
+
+
+def build_requests_queue():
+    global requests_queue
+    videos = get_videos()
+    for video in videos:
+        html = f"""<iframe style='position: absolute; height: 100%; width: 100%; border: none' src='https://www.youtube.com/embed/{video}?&amp;autoplay=1&amp;controls=0&amp;mute=1&amp;loop=1&amp;playlist={video}&amp;start=0&amp;end=35;' title='YouTube video player' frameborder='0' allow='autoplay; encrypted-media; picture-in-picture' allowfullscreen='' >"""
+        item = ViewItem(html, duration=30)
+        requests_queue.put_nowait(item)
+
+
+build_requests_queue()
+
+
+def collect_websocket(func):
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        global clients
+        queue = asyncio.Queue()
+        clients.add(queue)
+        try:
+            return await func(queue, *args, **kwargs)
+        finally:
+            clients.remove(queue)
+
+    return wrapper
+
+
+@api.websocket("/api/v2/ws")
+@collect_websocket
+async def ws2():
+    global requests_queue
+    while True:
+        data = await requests_queue.get()
+        await websocket.send(data)
+
+
+async def broadcast(message):
+    for queue in clients:
+        await queue.put(message)
+
+
+@api.route("/ws", methods=["GET"])
+async def html():
+
+    return """
+    <!doctype html>
+    <html>
+    <head>
+        <title>Websocket example</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    </head>
+    <body>
+        <div id='yt'></div>
+        <script type="text/javascript">
+        
+            function connect() {
+                var ws = new WebSocket('ws://' + document.domain + ':' + location.port + '/api/ws');
+                
+                ws.onopen = function() {
+                    ws.send(JSON.stringify({
+                        'type': 'subscribe',
+                        'channel': 'views'}));
+                };
+
+                ws.onclose = function(e) {
+                    console.log('Socket is closed. Reconnect will be attempted in 1 second.', e.reason);
+                    setTimeout(function() {
+                    connect();
+                    }, 1000);
+                };
+
+                ws.onerror = function(err) {
+                    console.error('Socket encountered error: ', err.message, 'Closing socket');
+                    ws.close();
+                };
+
+                ws.onmessage = function (event) {
+                    console.log('Received: ' + event.data);
+                    var data = JSON.parse(event.data);
+                    console.log(data.video);
+                    console.log(data.duration);
+                    document.getElementById('yt').innerHTML = data.video;
+                    setInterval(nextVideo, data.duration * 1000);
+                };
+
+                function nextVideo() {
+                    ws.send(JSON.stringify({
+                        'type': 'subscribe',
+                        'channel': 'views'}));
+                }
+                
+
+            };
+
+            connect();
+
+        </script>
+    </body>
+    </html>
+    """
