@@ -235,8 +235,8 @@ def build_requests_queue():
     global requests_queue
     videos = get_videos()
     for video in videos:
-        html = f"""<iframe style='position: absolute; height: 100%; width: 100%; border: none' src='https://www.youtube.com/embed/{video}?&amp;autoplay=1&amp;controls=0&amp;mute=1&amp;loop=1&amp;playlist={video}&amp;start=0&amp;end=35;' title='YouTube video player' frameborder='0' allow='autoplay; encrypted-media; picture-in-picture' allowfullscreen='' >"""
-        item = ViewItem(html, duration=30)
+        html = f"""<iframe style='position: absolute; height: 100%; width: 100%; border: none' src='https://www.youtube.com/embed/{video}?&amp;autoplay=1&amp;controls=0&amp;mute=1&amp;loop=1&amp;playlist={video}' title='YouTube video player' frameborder='0' allow='autoplay; encrypted-media; picture-in-picture' allowfullscreen='' >"""
+        item = ViewItem(html, duration=random.choice(range(30, 60)))
         requests_queue.put_nowait(item)
 
 
