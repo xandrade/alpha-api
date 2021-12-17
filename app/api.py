@@ -271,7 +271,7 @@ async def broadcast(message):
         await queue.put(message)
 
 
-@api.route("/ws", methods=["GET"])
+@api.route("/client", methods=["GET"])
 async def html():
 
     return """
