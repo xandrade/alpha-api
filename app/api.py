@@ -236,6 +236,7 @@ def build_requests_queue():
     videos = get_videos()
     for video in videos:
         html = f"""<iframe style='position: absolute; height: 100%; width: 100%; border: none' src='https://www.youtube.com/embed/{video}?&amp;autoplay=1&amp;controls=0&amp;mute=1&amp;loop=1&amp;playlist={video}' title='YouTube video player' frameborder='0' allow='autoplay; encrypted-media; picture-in-picture' allowfullscreen='' >"""
+        html = f"https://www.youtube.com/watch?v={video}"
         item = ViewItem(html, duration=random.choice(range(30, 60)))
         requests_queue.put_nowait(item)
 
@@ -286,7 +287,7 @@ async def html():
         <script type="text/javascript">
         
             function connect() {
-                var ws = new WebSocket('wss://' + document.domain + ':' + location.port + '/api/ws');
+                var ws = new WebSocket('ws://' + document.domain + ':' + location.port + '/api/ws');
                 
                 ws.onopen = function() {
                     ws.send(JSON.stringify({
@@ -312,7 +313,8 @@ async def html():
                     console.log(data.video);
                     console.log(data.duration);
                     document.getElementById('yt').innerHTML = data.video;
-                    setInterval(nextVideo, data.duration * 1000);
+                    openWin(data.video);
+                    setInterval(closeWin, data.duration * 1000);
                 };
 
                 function nextVideo() {
@@ -321,6 +323,15 @@ async def html():
                         'channel': 'views'}));
                 }
                 
+
+                function openWin(url) {
+                    myWindow = window.open(url, "_blank", "width=500, height=350");
+                }
+
+                function closeWin() {
+                    myWindow.close();
+                    nextVideo();
+                }
 
             };
 
