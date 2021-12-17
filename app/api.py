@@ -278,7 +278,7 @@ async def html():
     <!doctype html>
     <html>
     <head>
-        <title>Websocket example</title>
+        <title>Alpha Video Pool - Client</title>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     </head>
     <body>
