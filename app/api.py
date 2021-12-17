@@ -236,8 +236,17 @@ def build_requests_queue():
     videos = get_videos()
     for video in videos:
         html = f"""<iframe style='position: absolute; height: 100%; width: 100%; border: none' src='https://www.youtube.com/embed/{video}?&amp;autoplay=1&amp;controls=0&amp;mute=1&amp;loop=1&amp;playlist={video}' title='YouTube video player' frameborder='0' allow='autoplay; encrypted-media; picture-in-picture' allowfullscreen='' >"""
-        html = f"https://www.youtube.com/watch?v={video}"
-        item = ViewItem(html, duration=random.choice(range(30, 60)))
+
+        refs = [
+            "https://meditationbooster.org/api/ref?url=",
+            "https://dropref.com/?",
+            "https://dereferer.me/?",
+            "",
+        ]
+        ref = random.choice(refs)
+
+        html = f"{ref}https://www.youtube.com/watch?v={video}"
+        item = ViewItem(html, duration=random.choice(range(35, 60 * 2)))
         requests_queue.put_nowait(item)
 
 
