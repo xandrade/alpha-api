@@ -220,6 +220,7 @@ async def gallery(video_pairs):
 async def ws():
     while True:
         try:
+            #  logger.debug(websocket.headers.get(["Origin"]))
             data = await websocket.receive_json()
             if data.get("type") == "subscribe":
                 if requests_queue.empty():
@@ -227,7 +228,7 @@ async def ws():
                 request = await requests_queue.get()
                 await websocket.send_json(request.to_dict())
         except asyncio.CancelledError:
-            print('Client disconnected')
+            print("Client disconnected")
             raise
 
 
@@ -261,6 +262,7 @@ def collect_websocket(func):
     @wraps(func)
     async def wrapper(*args, **kwargs):
         global clients
+        logger.debug(clients)
         queue = asyncio.Queue()
         clients.add(queue)
         try:
@@ -275,6 +277,8 @@ def collect_websocket(func):
 @collect_websocket
 async def ws2(queue):
     while True:
+        logger.debug(list(queue.queue))
+        asyncio.wait(5000)
         data = await queue.get()
         await websocket.send(data)
 
@@ -291,30 +295,46 @@ async def html():
     <!doctype html>
     <html>
     <head>
-        <title>Alpha Video Pool - Client</title>
+        <title>Alpha - Client</title>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     </head>
     <body>
+        <progress max="100" min="0" value="100" width="100%";></progress>
+        <div id="val"></div>
         <div id='yt'></div>
         <script type="text/javascript">
         
+            var myWindow = null
+            var timer1 = null
+            var timer2 = null
+
+
             function connect() {
-                //var ws = new WebSocket('wss://' + document.domain + ':' + location.port + '/api/ws');
-                var ws = new WebSocket('wss://meditationbooster.org/api/ws');
+                var ws = new WebSocket('ws://' + document.domain + ':' + location.port + '/api/ws');
+                //var ws = new WebSocket('wss://meditationbooster.org/api/ws');
                 
+                ws.debug = true;
+
                 ws.onopen = function() {
+                    console.log('Socket connection established');
                     ws.send(JSON.stringify({
                         'type': 'subscribe',
-                        'channel': 'views'}));
+                        'channel': 'connected'}));
                 };
 
                 ws.onclose = function(e) {
-                    console.log('Socket is closed. Reconnect will be attempted in 1 second.', e.reason);
-                    setTimeout(function() {
-                    connect();
-                    }, 5000);
+                    if (event.wasClean) {
+                        console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+                    } else {
+                            console.log('[close] Connection died');
+                    }
+                    ws = null
+                    setTimeout(connect, 5000)
+                    window.myWindow.close();
+                    clearTimeout(window.timer1);
+                    clearTimeout(window.timer2);
                 };
-
+                
                 ws.onerror = function(err) {
                     console.error('Socket encountered error: ', err.message, 'Closing socket');
                     ws.close();
@@ -327,22 +347,53 @@ async def html():
                     console.log(data.duration);
                     document.getElementById('yt').innerHTML = data.video;
                     openWin(data.video);
-                    setInterval(closeWin, data.duration * 1000);
+                    timer1 = setTimeout(closeWin, data.duration * 1000);
+                    
+                    var interval = 1, //How much to increase the progressbar per frame
+                    updatesPerSecond = data.duration*1000/60, //Set the nr of updates per second (fps)
+                    progress =  $('progress'),
+                    animator = function(){
+                        progress.val(progress.val()+interval);
+                        $('#val').text(progress.val());
+                        if ( progress.val()+interval < progress.attr('max')){
+                        setTimeout(animator, updatesPerSecond);
+                        } else { 
+                            $('#val').text('Done');
+                            progress.val(progress.attr('max'));
+                        }
+                    },
+                    reverse = function(){
+                        progress.val(progress.val() - interval);
+                        $('#val').text(progress.val());
+                        if ( progress.val() - interval > progress.attr('min')){
+                        setTimeout(reverse, updatesPerSecond);
+                        } else { 
+                            $('#val').text('Done');
+                            progress.val(progress.attr('min'));
+                        }
+                    }
+                    progress.val(data.duration);
+                    timer2 = setTimeout(reverse, updatesPerSecond);
+
                 };
 
                 function nextVideo() {
+                    console.log('Requesting for next video');
                     ws.send(JSON.stringify({
                         'type': 'subscribe',
-                        'channel': 'views'}));
+                        'request': 'next'})
+                    );
                 }
                 
 
                 function openWin(url) {
-                    myWindow = window.open(url, "_blank", "width=500, height=350");
+                    window.myWindow = window.open(url, "_blank", "width=500, height=350");
                 }
 
                 function closeWin() {
-                    myWindow.close();
+                    console.log('Closing window');
+                    window.myWindow.close();
+                    console.log('Closed window');
                     nextVideo();
                 }
 
