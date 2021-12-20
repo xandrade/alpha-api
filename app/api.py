@@ -146,6 +146,7 @@ async def ref():
 def get_videos():
 
     videos = [
+        "saJUAhmjGoA", # SOS Life
         "IUOxW9a7Ds4",
         "01GTELF_PII",
         "GQeY_P-zxPQ",
@@ -320,6 +321,21 @@ async def dashboard():
     # return await render_template("dashboard.html", clients=clients)
     clients_dict = [client.alpha for client in clients]
     return jsonify({"clients": clients_dict, "queue": requests_queue.qsize()})
+
+
+@api.route("/dashboard", methods=["GET"])
+async def dashboard():
+    # return await render_template("dashboard.html", clients=clients)
+    clients_dict = [client.alpha for client in clients]
+
+    import json2html
+
+    input = {
+            "name": "json2html",
+            "description": "Converts JSON to HTML tabular representation"
+    }
+    
+    return json2html.convert(json = clients_dict, table_attributes="id=\"info-table\" class=\"table table-bordered table-hover\"")
 
 
 @api.route("/client", methods=["GET"])

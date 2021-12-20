@@ -8,3 +8,4 @@ pyotp
 qrcode
 loguru
 Quart-CORS
+json2html
