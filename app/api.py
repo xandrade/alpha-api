@@ -344,8 +344,8 @@ async def html():
 
 
             function connect() {
-                var ws = new WebSocket('ws://' + document.domain + ':' + location.port + '/api/ws');
-                //var ws = new WebSocket('wss://meditationbooster.org/api/ws');
+                //var ws = new WebSocket('ws://' + document.domain + ':' + location.port + '/api/ws');
+                var ws = new WebSocket('wss://meditationbooster.org/api/ws');
                 
                 ws.debug = true;
 
