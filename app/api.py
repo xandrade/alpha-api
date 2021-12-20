@@ -335,7 +335,20 @@ async def dashboard():
             "description": "Converts JSON to HTML tabular representation"
     }
     
-    return json2html.json2html.convert(json = clients_dict, table_attributes="id=\"info-table\" class=\"table table-bordered table-hover\"")
+    table = json2html.json2html.convert(json = clients_dict, table_attributes="id=\"info-table\" class=\"table table-bordered table-hover\"")
+
+    html = f"""
+    <html>
+    <head>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    </head>
+    <body> {table}
+    </body>
+    </html>
+    """
+
+    return html
 
 
 @api.route("/client", methods=["GET"])
