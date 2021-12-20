@@ -317,7 +317,7 @@ async def broadcast(message):
 
 
 @api.route("/vm", methods=["GET"])
-async def dashboard():
+async def vm():
     # return await render_template("dashboard.html", clients=clients)
     clients_dict = [client.alpha for client in clients]
     return jsonify({"clients": clients_dict, "queue": requests_queue.qsize()})
