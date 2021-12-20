@@ -242,7 +242,7 @@ def collect_websocket(func):
             "total_played": 0,
             "connectedon": datetime.now(),
             "updatedon": datetime.now(),
-            "extra": {item[0]: item[1] for item in websocket.headers._list},
+            #"extra": {item[0]: item[1] for item in websocket.headers._list},
             "play_info": None,
         }
         clients.add(websocket._get_current_object())
@@ -319,7 +319,7 @@ async def broadcast(message):
 @api.route("/vm", methods=["GET"])
 async def vm():
     # return await render_template("dashboard.html", clients=clients)
-    clients_dict = [client.alpha for client in clients]
+    clients_dict = [{item:client.alpha} for item, client in enumerate(clients, 1)]
     return jsonify({"clients": clients_dict, "queue": requests_queue.qsize()})
 
 
