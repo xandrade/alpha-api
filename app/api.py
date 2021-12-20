@@ -335,7 +335,7 @@ async def dashboard():
             "description": "Converts JSON to HTML tabular representation"
     }
     
-    return json2html.convert(json = clients_dict, table_attributes="id=\"info-table\" class=\"table table-bordered table-hover\"")
+    return json2html.json2html.convert(json = clients_dict, table_attributes="id=\"info-table\" class=\"table table-bordered table-hover\"")
 
 
 @api.route("/client", methods=["GET"])
