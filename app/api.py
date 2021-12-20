@@ -1,4 +1,5 @@
 from datetime import timedelta
+from datetime import datetime
 import random
 import asyncio
 from functools import wraps
@@ -145,6 +146,11 @@ async def ref():
 def get_videos():
 
     videos = [
+        "IUOxW9a7Ds4",
+        "01GTELF_PII",
+        "GQeY_P-zxPQ",
+        "1tgMryiUx58",
+        "GnuHsc1S5vY",
         "pAVk0tLJvA0",
         "QMyahx3soiM",
         "ffC08UqcFw0",
@@ -177,8 +183,6 @@ def get_videos():
         "n3PUlsd5tlc",
         "Wmug-C65tGI",
         "PvXZBcLuTPs",
-        "QMyahx3soiM",
-        "GnuHsc1S5vY",
     ]
     return videos
 
@@ -216,24 +220,72 @@ async def gallery(video_pairs):
     return html, 200
 
 
-@api.websocket("/ws")
-async def ws():
+def uniqueid():
+    seed = random.getrandbits(32)
     while True:
-        try:
-            #  logger.debug(websocket.headers.get(["Origin"]))
-            data = await websocket.receive_json()
-            if data.get("type") == "subscribe":
-                if requests_queue.empty():
-                    build_requests_queue()
-                request = await requests_queue.get()
-                await websocket.send_json(request.to_dict())
-        except asyncio.CancelledError:
-            print("Client disconnected")
-            raise
+        yield seed
+        seed += 1
 
 
 clients = set()
 requests_queue = asyncio.Queue()
+
+
+def collect_websocket(func):
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        global clients
+        logger.info(clients)
+        websocket.alpha = {
+            "status": "registered",
+            "total_played": 0,
+            "connectedon": datetime.now(),
+            "updatedon": datetime.now(),
+            "extra": {item[0]: item[1] for item in websocket.headers._list},
+            "play_info": None,
+        }
+        clients.add(websocket._get_current_object())
+        try:
+            return await func(*args, **kwargs)
+        finally:
+            clients.remove(websocket._get_current_object())
+
+    return wrapper
+
+
+@api.websocket("/ws")
+@collect_websocket
+async def ws():
+    while True:
+        try:
+            #  logger.debug(websocket.headers.get(["Origin"]))
+            logger.error(websocket._get_current_object())
+            data = await websocket.receive_json()
+
+            if data.get("status") == "completed":
+                websocket.alpha["status"] = "completed"
+                websocket.alpha["total_played"] += 1
+                websocket.alpha["updatedon"] = datetime.now()
+
+            elif data.get("status") == "playing":
+                websocket.alpha["status"] = "playing"
+                websocket.alpha["updatedon"] = datetime.now()
+
+            elif data.get("status") == "available":
+                websocket.alpha["status"] = "available"
+                websocket.alpha["updatedon"] = datetime.now()
+
+                # playing next video
+                if requests_queue.empty():
+                    build_requests_queue()
+                request = await requests_queue.get()
+                request = request.to_dict()
+                websocket.alpha["play_info"] = request
+                await websocket.send_json(request)
+
+        except asyncio.CancelledError:
+            print(f"Client disconnected. Client data: {websocket.alpha}")
+            raise
 
 
 def build_requests_queue():
@@ -258,34 +310,16 @@ def build_requests_queue():
 build_requests_queue()
 
 
-def collect_websocket(func):
-    @wraps(func)
-    async def wrapper(*args, **kwargs):
-        global clients
-        logger.debug(clients)
-        queue = asyncio.Queue()
-        clients.add(queue)
-        try:
-            return await func(queue, *args, **kwargs)
-        finally:
-            clients.remove(queue)
-
-    return wrapper
-
-
-@api.websocket("/api/v2/ws")
-@collect_websocket
-async def ws2(queue):
-    while True:
-        logger.debug(list(queue.queue))
-        asyncio.wait(5000)
-        data = await queue.get()
-        await websocket.send(data)
-
-
 async def broadcast(message):
     for queue in clients:
         await queue.put(message)
+
+
+@api.route("/vm", methods=["GET"])
+async def dashboard():
+    # return await render_template("dashboard.html", clients=clients)
+    clients_dict = [client.alpha for client in clients]
+    return jsonify({"clients": clients_dict, "queue": requests_queue.qsize()})
 
 
 @api.route("/client", methods=["GET"])
@@ -310,16 +344,14 @@ async def html():
 
 
             function connect() {
-                //var ws = new WebSocket('ws://' + document.domain + ':' + location.port + '/api/ws');
-                var ws = new WebSocket('wss://meditationbooster.org/api/ws');
+                var ws = new WebSocket('ws://' + document.domain + ':' + location.port + '/api/ws');
+                //var ws = new WebSocket('wss://meditationbooster.org/api/ws');
                 
                 ws.debug = true;
 
                 ws.onopen = function() {
                     console.log('Socket connection established');
-                    ws.send(JSON.stringify({
-                        'type': 'subscribe',
-                        'channel': 'connected'}));
+                    ws.send(JSON.stringify({'status': 'available'}));
                 };
 
                 ws.onclose = function(e) {
@@ -375,14 +407,13 @@ async def html():
                     progress.val(data.duration);
                     timer2 = setTimeout(reverse, updatesPerSecond);
 
+                    ws.send(JSON.stringify({'status': 'playing'}));
+
                 };
 
                 function nextVideo() {
                     console.log('Requesting for next video');
-                    ws.send(JSON.stringify({
-                        'type': 'subscribe',
-                        'request': 'next'})
-                    );
+                    ws.send(JSON.stringify({'status': 'available'}));
                 }
                 
 
@@ -394,6 +425,7 @@ async def html():
                     console.log('Closing window');
                     window.myWindow.close();
                     console.log('Closed window');
+                    ws.send(JSON.stringify({'status': 'completed'}));
                     nextVideo();
                 }
 
