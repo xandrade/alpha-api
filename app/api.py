@@ -184,7 +184,7 @@ def get_videos():
         "Wmug-C65tGI",
         "PvXZBcLuTPs",
     ]
-    return videos
+    return videos[:5]  # last 5 videos
 
 
 @api.route("/gallery", methods=["GET"], defaults={"video_pairs": 3})
