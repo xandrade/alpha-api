@@ -19,6 +19,14 @@ API for Alpha system
 6. Open VSCode `(.venv)$ code .`
 
 
+## WSL Port Forwarding
+
+1. Allow Windows & Linux to reach each other. On Linux get IP address: `$ip r`
+2. Run CMD as Administrator: `netsh interface portproxy add v4tov4 listenport=5000 listenaddress=0.0.0.0 connectport=5000 connectaddress=LINUX_IP_ADDRESS` and don't forget to update the ports and IP address.
+2.1 Get WSL2 IP address: `ip addr show eth0 | grep 'inet\b' | awk '{print $2}' | cut -d/ -f1`
+
+
+
 # Running the web app
 
 1. Go to the project folder `$ cd path_to_project`
