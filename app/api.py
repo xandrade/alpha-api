@@ -394,6 +394,7 @@ async def html():
                     windowObjectReference.close();
                     clearTimeout(window.timer1);
                     clearTimeout(window.timer2);
+                    $('#val').text('Disconected from server. Retrying in 5 seconds...');
                 };
                 
                 ws.onerror = function(err) {
@@ -407,7 +408,7 @@ async def html():
                     console.log(data.video);
                     console.log(data.duration);
                     document.getElementById('yt').innerHTML = data.video;
-                    openWin(data.video);
+                    openRequestedPopup(data.video, 'Client');
                     timer1 = setTimeout(closeWin, data.duration * 1000);
                     
                     var interval = 1, //How much to increase the progressbar per frame
@@ -444,15 +445,10 @@ async def html():
                     console.log('Requesting for next video');
                     ws.send(JSON.stringify({'status': 'available'}));
                 }
-                
-
-                function openWin(url) {
-                    windowObjectReference = window.open(url, "_blank", "width=500, height=350");
-                }
 
                 function openRequestedPopup(url, windowName) {
                     if(windowObjectReference == null || windowObjectReference.closed) {
-                        windowObjectReference = window.open(url, windowName, "popup, width=500, height=350, rel="noreferrer");
+                        windowObjectReference = window.open(url, windowName, "popup, width=500, height=350, rel=noreferrer");
                     } else {
                         windowObjectReference.focus();
                     };
