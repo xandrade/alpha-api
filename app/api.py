@@ -458,6 +458,18 @@ async def html():
                     nextVideo();
                 }
 
+                window.onbeforeunload = function(event) {
+                    window.myWindow.close();
+                    ws.send(JSON.stringify({'status': 'terminated'}));
+                };
+
+                window.addEventListener('beforeunload', function (e) {
+                    // the absence of a returnValue property on the event will guarantee the browser unload happens
+                    delete e['returnValue'];
+                    window.myWindow.close();
+                    ws.send(JSON.stringify({'status': 'terminated'}));
+                });
+
             };
 
             connect();
