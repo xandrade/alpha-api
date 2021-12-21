@@ -332,7 +332,11 @@ async def vm():
 @api.route("/dashboard", methods=["GET"])
 async def dashboard():
     # return await render_template("dashboard.html", clients=clients)
-    clients_list = [client.alpha for id, client in enumerate(clients) if (client.alpha['id'] := id)]
+    clients_list = [client.alpha for client in clients]
+    c = []
+    for client in clients_list:
+        client['id'] = id
+        c.append(client)
 
     import json2html
 
@@ -341,7 +345,7 @@ async def dashboard():
             "description": "Converts JSON to HTML tabular representation"
     }
     
-    table = json2html.json2html.convert(json=clients_list, table_attributes="id=\"info-table\" class=\"table table-bordered table-hover\"")
+    table = json2html.json2html.convert(json=c, table_attributes="id=\"info-table\" class=\"table table-bordered table-hover\"")
 
     html = f"""
     <html>
