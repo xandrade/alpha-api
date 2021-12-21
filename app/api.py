@@ -367,7 +367,7 @@ async def html():
         <div id='yt'></div>
         <script type="text/javascript">
         
-            var myWindow = null
+            var windowObjectReference = null
             var timer1 = null
             var timer2 = null
 
@@ -391,7 +391,7 @@ async def html():
                     }
                     ws = null
                     setTimeout(connect, 5000)
-                    window.myWindow.close();
+                    windowObjectReference.close();
                     clearTimeout(window.timer1);
                     clearTimeout(window.timer2);
                 };
@@ -447,26 +447,34 @@ async def html():
                 
 
                 function openWin(url) {
-                    window.myWindow = window.open(url, "_blank", "width=500, height=350");
+                    windowObjectReference = window.open(url, "_blank", "width=500, height=350");
                 }
+
+                function openRequestedPopup(url, windowName) {
+                    if(windowObjectReference == null || windowObjectReference.closed) {
+                        windowObjectReference = window.open(url, windowName, "popup, width=500, height=350, rel="noreferrer");
+                    } else {
+                        windowObjectReference.focus();
+                    };
+                };
 
                 function closeWin() {
                     console.log('Closing window');
-                    window.myWindow.close();
+                    windowObjectReference.close();
                     console.log('Closed window');
                     ws.send(JSON.stringify({'status': 'completed'}));
                     nextVideo();
-                }
+                };
 
                 window.onbeforeunload = function(event) {
-                    window.myWindow.close();
+                    windowObjectReference.close();
                     ws.send(JSON.stringify({'status': 'terminated'}));
                 };
 
                 window.addEventListener('beforeunload', function (e) {
                     // the absence of a returnValue property on the event will guarantee the browser unload happens
                     delete e['returnValue'];
-                    window.myWindow.close();
+                    windowObjectReference.close();
                     ws.send(JSON.stringify({'status': 'terminated'}));
                 });
 
