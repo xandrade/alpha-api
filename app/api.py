@@ -186,7 +186,7 @@ def get_videos():
         "Wmug-C65tGI",
         "PvXZBcLuTPs",
     ]
-    return videos[:5]  # last 5 videos
+    return videos
 
 
 @api.route("/gallery", methods=["GET"], defaults={"video_pairs": 3})
@@ -449,7 +449,7 @@ async def html():
 
                 function openRequestedPopup(url, windowName) {
                     if(windowObjectReference == null || windowObjectReference.closed) {
-                        windowObjectReference = window.open(url, windowName, "popup, width=500, height=350, rel=noreferrer");
+                        windowObjectReference = window.open(url, windowName, "popup, width=500, height=350, rel=noreferrer, toolbar=0, status=0,");
                     } else {
                         windowObjectReference.focus();
                     };
