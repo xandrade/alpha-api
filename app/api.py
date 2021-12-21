@@ -334,7 +334,7 @@ async def dashboard():
     # return await render_template("dashboard.html", clients=clients)
     clients_list = [client.alpha for client in clients]
     c = []
-    for id, client in enumerate(clients_list):
+    for id, client in enumerate(clients_list, 1):
         client['id'] = id
         c.append(client)
 
