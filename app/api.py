@@ -200,6 +200,7 @@ async def gallery(video_pairs):
 
     videos = get_videos()
 
+    # ToDo: Check if videos list is less than video_pairs*2
     random_video = random.sample(videos, video_pairs * 2)
 
     for i in range(video_pairs):
@@ -273,6 +274,10 @@ async def ws():
                 websocket.alpha["status"] = "playing"
                 websocket.alpha["updatedon"] = datetime.now()
 
+            elif data.get("status") == "terminated":
+                websocket.alpha["status"] = "terminated"
+                websocket.alpha["updatedon"] = datetime.now()
+
             elif data.get("status") == "available":
                 websocket.alpha["status"] = "available"
                 websocket.alpha["updatedon"] = datetime.now()
@@ -327,7 +332,7 @@ async def vm():
 @api.route("/dashboard", methods=["GET"])
 async def dashboard():
     # return await render_template("dashboard.html", clients=clients)
-    clients_dict = [client.alpha for client in clients]
+    clients_dict = [{'id:':id, 'client.alpha': client.alpha} for id, client in enumerate(clients)]
 
     import json2html
 
