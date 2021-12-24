@@ -239,9 +239,10 @@ def collect_websocket(func):
     @wraps(func)
     async def wrapper(*args, **kwargs):
         global clients
-        logger.info(clients)
+        #logger.info(clients)
         # asyncio.wait(20)
 
+        sec_id = None
         for header in websocket.headers:
             if 'Sec-Websocket-Key' in header:
                 sec_id = header[1]
@@ -255,7 +256,7 @@ def collect_websocket(func):
             "remote_addr": websocket.remote_addr,
             #"session_id": websocket.cookies.get("session"),
             "sec_id": sec_id,
-            #"extra": {item[0]: item[1] for item in websocket.headers._list},
+            "extra": {item[0]: item[1] for item in websocket.headers._list},
             "last_request": None,
         }
         clients.add(websocket._get_current_object())
