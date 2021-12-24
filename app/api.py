@@ -558,7 +558,9 @@ async def html():
                     if (request == "stop") {
                         clearTimeout(window.timer1);
                         clearTimeout(window.timer2);
-                        windowObjectReference.close();
+                        if(windowObjectReference != null) {
+                            windowObjectReference.close();
+                        }
                         $('#val').text('Stopped from server');
                         ws.send(JSON.stringify({'status': 'available'}));
                     }
@@ -569,7 +571,9 @@ async def html():
                     else if (request == "kill") {
                         clearTimeout(window.timer1);
                         clearTimeout(window.timer2);
-                        windowObjectReference.close();
+                        if(windowObjectReference != null) {
+                            windowObjectReference.close();
+                        }
                         window.open("", '_self').window.close();
                         setTimeout (window.close, 5000);
                         window.close();
