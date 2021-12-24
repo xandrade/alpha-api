@@ -353,7 +353,7 @@ async def ws():
                 websocket.alpha["status"] = "available"
                 websocket.alpha["updatedon"] = datetime.now()
 
-                # await client_actions('play', websocket.sec_id)
+                await client_actions('play', websocket.alpha['sec_id'])
 
         except asyncio.CancelledError:
             print(f"Client disconnected. Client data: {websocket.alpha}")
