@@ -503,12 +503,8 @@ async def html():
 
             function connect() {
 
-                //var authToken = 'R3YKZFKBVi';
-                //document.cookie = 'X-Authorization=' + authToken + '; path=/';
-
-                var url = 'ws://' + document.domain + ':' + location.port + '/api/ws'
-                // var url = 'wss://meditationbooster.org/api/ws'
-
+                //var url = 'ws://' + document.domain + ':' + location.port + '/api/ws'
+                var url = 'wss://meditationbooster.org/api/ws'
 
                 var ws = new WebSocket(url);
                 
