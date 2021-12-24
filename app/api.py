@@ -266,6 +266,7 @@ def collect_websocket(func):
             "last_request": None,
         }
         clients.add(websocket._get_current_object())
+        logger.info(websocket.alpha)
         logger.info(f"{len(clients)} clients connected")
         
         try:
