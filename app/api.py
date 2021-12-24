@@ -532,7 +532,9 @@ async def html():
                     }
                     ws = null
                     setTimeout(connect, 5000)
-                    windowObjectReference.close();
+                    if(windowObjectReference != null) {
+                        windowObjectReference.close();
+                    }
                     clearTimeout(window.timer1);
                     clearTimeout(window.timer2);
                     $('#val').text('Disconected from server. Retrying in 5 seconds...');
