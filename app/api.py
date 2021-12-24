@@ -583,7 +583,7 @@ async def html():
                     console.log(data.redirect_url);
                         console.log(data.video_url);
                         console.log(data.duration);
-                        document.getElementById('yt').innerHTML = data.video;
+                        document.getElementById('yt').innerHTML = data.video_url;
                         openRequestedPopup(data.redirect_url + data.video_url, 'Client');
                         timer1 = setTimeout(closeWin, data.duration * 1000);
                         
