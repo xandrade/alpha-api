@@ -248,21 +248,30 @@ def collect_websocket(func):
                 sec_id = header[1]
                 break
 
+        remote_addr = None
+        for header in websocket.headers:
+            if 'X-Real-Ip' in header:
+                remote_addr = header[1]
+                break
+
         websocket.alpha = {
             "status": "registered",
             "total_played": 0,
             "connectedon": datetime.now(),
             "updatedon": datetime.now(),
-            "remote_addr": websocket.remote_addr,
+            "remote_addr": remote_addr,
             #"session_id": websocket.cookies.get("session"),
             "sec_id": sec_id,
-            "extra": {item[0]: item[1] for item in websocket.headers._list},
+            #"extra": {item[0]: item[1] for item in websocket.headers._list},
             "last_request": None,
         }
         clients.add(websocket._get_current_object())
+        logger.info(f"{len(clients)} clients connected")
+        
         try:
             return await func(*args, **kwargs)
         finally:
+            logger.info(f"Websocket {websocket.alpha['remote_addr']} disconnected")
             clients.remove(websocket._get_current_object())
 
     return wrapper
@@ -327,7 +336,7 @@ async def ws():
                 websocket.alpha["total_played"] += 1
                 websocket.alpha["updatedon"] = datetime.now()
             
-            elif data.get("ping") == "pong":
+            elif data.get("status") == "pong":
                 # websocket.close()
                 websocket.alpha["updatedon"] = datetime.now()
 
@@ -343,9 +352,7 @@ async def ws():
                 websocket.alpha["status"] = "available"
                 websocket.alpha["updatedon"] = datetime.now()
 
-                #message = await get_next_video()
-                #websocket.alpha["last_request"] = message
-                #await websocket.send_json(message)
+                await client_actions('play', websocket.sec_id)
 
         except asyncio.CancelledError:
             print(f"Client disconnected. Client data: {websocket.alpha}")
