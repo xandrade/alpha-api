@@ -248,19 +248,18 @@ def collect_websocket(func):
                 sec_id = header[1]
                 break
 
-        """
         remote_addr = None
         for header in websocket.headers:
             if 'X-Real-Ip' in header:
                 remote_addr = header[1]
                 break
-        """
+
         websocket.alpha = {
             "status": "registered",
             "total_played": 0,
             "connectedon": datetime.now(),
             "updatedon": datetime.now(),
-            #"remote_addr": remote_addr,
+            "remote_addr": remote_addr,
             #"session_id": websocket.cookies.get("session"),
             "sec_id": sec_id,
             #"extra": {item[0]: item[1] for item in websocket.headers._list},
