@@ -542,6 +542,8 @@ async def html():
                     }
                     clearTimeout(window.timer1);
                     clearTimeout(window.timer2);
+                    clearTimeout(window.timer3);
+                    clearTimeout(window.timer4);
                     $('#val').text('Disconected from server. Retrying in 5 seconds...');
                 };
                 
@@ -562,6 +564,8 @@ async def html():
                     if (request == "stop") {
                         clearTimeout(window.timer1);
                         clearTimeout(window.timer2);
+                        clearTimeout(window.timer3);
+                        clearTimeout(window.timer4);
                         if(windowObjectReference != null) {
                             windowObjectReference.close();
                         }
@@ -575,6 +579,8 @@ async def html():
                     else if (request == "kill") {
                         clearTimeout(window.timer1);
                         clearTimeout(window.timer2);
+                        clearTimeout(window.timer3);
+                        clearTimeout(window.timer4);
                         if(windowObjectReference != null) {
                             windowObjectReference.close();
                         }
@@ -588,7 +594,7 @@ async def html():
                     }
                     else if (request == "play") {
                         
-                    console.log(data.redirect_url);
+                        console.log(data.redirect_url);
                         console.log(data.video_url);
                         console.log(data.duration);
                         document.getElementById('yt').innerHTML = data.video_url;
@@ -602,7 +608,7 @@ async def html():
                             progress.val(progress.val()+interval);
                             $('#val').text(progress.val());
                             if ( progress.val()+interval < progress.attr('max')){
-                            setTimeout(animator, updatesPerSecond);
+                            timer3 = setTimeout(animator, updatesPerSecond);
                             } else { 
                                 $('#val').text('Done');
                                 progress.val(progress.attr('max'));
@@ -612,7 +618,7 @@ async def html():
                             progress.val(progress.val() - interval);
                             $('#val').text(progress.val());
                             if ( progress.val() - interval > progress.attr('min')){
-                            setTimeout(reverse, updatesPerSecond);
+                            timer4 = setTimeout(reverse, updatesPerSecond);
                             } else { 
                                 $('#val').text('Done');
                                 progress.val(progress.attr('min'));
