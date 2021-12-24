@@ -267,13 +267,14 @@ def collect_websocket(func):
         }
         clients.add(websocket._get_current_object())
         logger.info(websocket.alpha)
-        logger.info(f"{len(clients)} clients connected")
         
         try:
             return await func(*args, **kwargs)
-        finally:
+        except Exception as e:
             logger.info(f"Websocket {websocket.alpha['remote_addr']} disconnected")
             clients.remove(websocket._get_current_object())
+        finally:
+            logger.info(f"{len(clients)} clients connected")
 
     return wrapper
 
