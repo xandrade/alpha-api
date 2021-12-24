@@ -253,7 +253,7 @@ def collect_websocket(func):
             "connectedon": datetime.now(),
             "updatedon": datetime.now(),
             "remote_addr": websocket.remote_addr,
-            "session_id": websocket.cookies.get("session"),
+            #"session_id": websocket.cookies.get("session"),
             "sec_id": sec_id,
             #"extra": {item[0]: item[1] for item in websocket.headers._list},
             "last_request": None,
@@ -419,15 +419,26 @@ async def dashboard():
 
 
     icons = [{'play': '''<svg viewBox="0 0 24 24" width="24" height="24" stroke="#000000" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon></svg>''',
-              'stop': '''<svg viewBox="0 0 24 24" width="24" height="24" stroke="#000000" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><path d="M6 19l3-3 3 3M6 13l3 3-3 3M6 7l3 3-3 3"></path></svg>''',
+              'stop': '''<svg viewBox="0 0 24 24" width="24" height="24" stroke="#000000" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><circle cx="12" cy="12" r="10"></circle><rect x="9" y="9" width="6" height="6"></rect></svg>''',
+              'reload': '''<svg viewBox="0 0 24 24" width="24" height="24" stroke="#000000" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>''',
+              'kill': '''<svg viewBox="0 0 24 24" width="24" height="24" stroke="#000000" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="18" y1="8" x2="23" y2="13"></line><line x1="23" y1="8" x2="18" y2="13"></line></svg>''',
+              'ping': '''<svg viewBox="0 0 24 24" width="24" height="24" stroke="#000000" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>''',
+
             }]
 
 
     # ToDo - add icons
-    
+
     for id, client in enumerate(clients_list, 1):
-        client['id'] = id
-        client['commands'] = f'''||play|| ||stop|| ||reload|| ||kill|| ||ping||'''
+        client['#'] = id
+        client['status'] = client['status'].capitalize()
+        client['commands'] = f'''
+        <a href=http://localhost:5000/api/client/play/{client.get("sec_id")} onclick="return false;">||play||</a> 
+        <a href=http://localhost:5000/api/client/stop/{client.get("sec_id")} onclick="return false;">||stop||</a> 
+        <a href=http://localhost:5000/api/client/reload/{client.get("sec_id")} onclick="return false;">||reload||</a> 
+        <a href=http://localhost:5000/api/client/kill/{client.get("sec_id")} onclick="return false;">||kill||</a> 
+        <a href=http://localhost:5000/api/client/ping/{client.get("sec_id")} onclick="return false;">||ping||</a>
+        '''
         # <a href="http://localhost:5000/api/client/play/{client.get('sec_id')}" onclick="return;">
         c.append(client)
 
@@ -441,10 +452,18 @@ async def dashboard():
     table = json2html.json2html.convert(json=c, table_attributes="id=\"info-table\" class=\"table table-bordered table-hover\"")
 
     table = table.replace('||play||', icons[0]['play'])
-    table = table.replace('||stop||', icons[0]['play'])
-    table = table.replace('||reload||', icons[0]['play'])
-    table = table.replace('||kill||', icons[0]['play'])
-    table = table.replace('||ping||', icons[0]['play'])
+    table = table.replace('||stop||', icons[0]['stop'])
+    table = table.replace('||reload||', icons[0]['reload'])
+    table = table.replace('||kill||', icons[0]['kill'])
+    table = table.replace('||ping||', icons[0]['ping'])
+
+    table = table.replace('&lt;', '<')
+    table = table.replace('&gt;', '>')
+    table = table.replace('&amp;', '&')
+    #table = table.replace('&quot;', '"')
+    #table = table.replace('&#39;', "'")
+    #table = table.replace('&#x2F;', '/')
+
 
     html = f"""
     <html>
