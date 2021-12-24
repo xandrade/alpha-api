@@ -433,13 +433,12 @@ async def dashboard():
         client['#'] = id
         client['status'] = client['status'].capitalize()
         client['commands'] = f'''
-        <a href=http://localhost:5000/api/client/play/{client.get("sec_id")} onclick="return false;">||play||</a> 
-        <a href=http://localhost:5000/api/client/stop/{client.get("sec_id")} onclick="return false;">||stop||</a> 
-        <a href=http://localhost:5000/api/client/reload/{client.get("sec_id")} onclick="return false;">||reload||</a> 
-        <a href=http://localhost:5000/api/client/kill/{client.get("sec_id")} onclick="return false;">||kill||</a> 
-        <a href=http://localhost:5000/api/client/ping/{client.get("sec_id")} onclick="return false;">||ping||</a>
+        <a href=https://meditationbooster.org/api/client/play/{client.get("sec_id")} onclick="return false;">||play||</a> 
+        <a href=https://meditationbooster.org/api/client/stop/{client.get("sec_id")} onclick="return false;">||stop||</a> 
+        <a href=https://meditationbooster.org/api/client/reload/{client.get("sec_id")} onclick="return false;">||reload||</a> 
+        <a href=https://meditationbooster.org/api/client/kill/{client.get("sec_id")} onclick="return false;">||kill||</a> 
+        <a href=https://meditationbooster.org/api/client/ping/{client.get("sec_id")} onclick="return false;">||ping||</a>
         '''
-        # <a href="http://localhost:5000/api/client/play/{client.get('sec_id')}" onclick="return;">
         c.append(client)
 
     import json2html
