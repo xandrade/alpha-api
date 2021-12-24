@@ -572,6 +572,8 @@ async def html():
                         window.close();
                         setTimeout(() => {window.close();}, 2000);
                         setTimeout(() => {window.close();}, 4000);
+                        ws.send(JSON.stringify({'status': 'terminated'}));
+                        ws.close();
                     }
                     else if (request == "play") {
                         
