@@ -336,6 +336,10 @@ async def ws():
                 websocket.alpha["status"] = "completed"
                 websocket.alpha["total_played"] += 1
                 websocket.alpha["updatedon"] = datetime.now()
+
+            if data.get("status") == "stopped":
+                websocket.alpha["status"] = "stopped"
+                websocket.alpha["updatedon"] = datetime.now()
             
             elif data.get("status") == "pong":
                 # websocket.close()
@@ -562,7 +566,7 @@ async def html():
                             windowObjectReference.close();
                         }
                         $('#val').text('Stopped from server');
-                        ws.send(JSON.stringify({'status': 'available'}));
+                        ws.send(JSON.stringify({'status': 'stopped'}));
                     }
                     else if (request == "ping") {
                         console.log('ping');
