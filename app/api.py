@@ -524,7 +524,7 @@ async def html():
                     ws.send(JSON.stringify({'status': 'available'}));
                 };
 
-                ws.onclose = function(e) {
+                ws.onclose = function(event) {
                     if (event.wasClean) {
                         console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
                     } else {
