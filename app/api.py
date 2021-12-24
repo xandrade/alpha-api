@@ -374,8 +374,8 @@ def build_requests_queue():
         ]
         ref = random.choice(refs)
 
-        html = f"{ref}https://www.youtube.com/watch?v={video}"
-        item = ViewItem(html, duration=random.choice(range(35, 60 * 2)))
+        video_url = f"https://www.youtube.com/watch?v={video}"
+        item = ViewItem(video_url=video_url, redirect_url=ref, duration=random.choice(range(35, 60 * 2)))
         requests_queue.put_nowait(item)
 
 
@@ -580,10 +580,11 @@ async def html():
                     }
                     else if (request == "play") {
                         
-                        console.log(data.video);
+                    console.log(data.redirect_url);
+                        console.log(data.video_url);
                         console.log(data.duration);
                         document.getElementById('yt').innerHTML = data.video;
-                        openRequestedPopup(data.video, 'Client');
+                        openRequestedPopup(data.redirect_url + data.video_url, 'Client');
                         timer1 = setTimeout(closeWin, data.duration * 1000);
                         
                         var interval = 1, //How much to increase the progressbar per frame
