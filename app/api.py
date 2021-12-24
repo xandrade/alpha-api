@@ -4,11 +4,12 @@ import random
 import asyncio
 from functools import wraps
 import json
+from typing import AsyncContextManager
 
 from models import Friends
 from data import ViewItem
 
-from quart import Blueprint, jsonify, request, Response, websocket
+from quart import Blueprint, jsonify, request, Response, websocket, abort, session, make_response
 from quart_cors import cors, route_cors
 from email_validator import validate_email, caching_resolver, EmailNotValidError
 import pyotp
@@ -239,13 +240,23 @@ def collect_websocket(func):
     async def wrapper(*args, **kwargs):
         global clients
         logger.info(clients)
+        # asyncio.wait(20)
+
+        for header in websocket.headers:
+            if 'Sec-Websocket-Key' in header:
+                sec_id = header[1]
+                break
+
         websocket.alpha = {
             "status": "registered",
             "total_played": 0,
             "connectedon": datetime.now(),
             "updatedon": datetime.now(),
+            "remote_addr": websocket.remote_addr,
+            "session_id": websocket.cookies.get("session"),
+            "sec_id": sec_id,
             #"extra": {item[0]: item[1] for item in websocket.headers._list},
-            "play_info": None,
+            "last_request": None,
         }
         clients.add(websocket._get_current_object())
         try:
@@ -256,18 +267,67 @@ def collect_websocket(func):
     return wrapper
 
 
+def login_required(func):
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        
+        token = websocket.cookies.get("X-Authorization")
+        # session_id = websocket.cookies.get("session")
+        
+        if token == 'R3YKZFKBVi2':
+            websocket.authenticated = True
+            return await func(*args, **kwargs)
+        else:
+            logger.info(f"Unauthorized access from {websocket.remote_addr}")
+            abort(401)
+    return wrapper
+
+
+async def get_websocket_from_session(id):
+    for client in clients:
+        if client.alpha.get("sec_id") == id:
+            return client
+    return None
+
+
+async def send_message(websocket, message):
+    await websocket.send(json.dumps(message))
+
+
+async def send_message_to_all(message):
+    for client in clients:
+        await send_message(client, message)
+        client.alpha["last_request"] = message
+
+
+# playing next video
+async def get_next_video():
+    if requests_queue.empty():
+        build_requests_queue()
+    message = await requests_queue.get()
+    message = message.to_dict()
+    message['request'] = 'play'
+    return message
+
+
 @api.websocket("/ws")
+@login_required
 @collect_websocket
 async def ws():
     while True:
         try:
+
             #  logger.debug(websocket.headers.get(["Origin"]))
-            logger.error(websocket._get_current_object())
+            #logger.error(websocket._get_current_object())
             data = await websocket.receive_json()
 
             if data.get("status") == "completed":
                 websocket.alpha["status"] = "completed"
                 websocket.alpha["total_played"] += 1
+                websocket.alpha["updatedon"] = datetime.now()
+            
+            elif data.get("ping") == "pong":
+                # websocket.close()
                 websocket.alpha["updatedon"] = datetime.now()
 
             elif data.get("status") == "playing":
@@ -282,13 +342,9 @@ async def ws():
                 websocket.alpha["status"] = "available"
                 websocket.alpha["updatedon"] = datetime.now()
 
-                # playing next video
-                if requests_queue.empty():
-                    build_requests_queue()
-                request = await requests_queue.get()
-                request = request.to_dict()
-                websocket.alpha["play_info"] = request
-                await websocket.send_json(request)
+                #message = await get_next_video()
+                #websocket.alpha["last_request"] = message
+                #await websocket.send_json(message)
 
         except asyncio.CancelledError:
             print(f"Client disconnected. Client data: {websocket.alpha}")
@@ -329,13 +385,50 @@ async def vm():
     return jsonify({"clients": clients_dict, "queue": requests_queue.qsize()})
 
 
+@api.route("/client/<action>", methods=["GET"], defaults={'sec_id': 'ALL'})
+@api.route("/client/<action>/<sec_id>", methods=["GET"])
+async def client_actions(action, sec_id):
+    
+
+    if action == 'reload': message = {"request": "reload"}
+    elif action == 'kill': message = {"request": "kill"}
+    elif action == 'ping': message = {"request": "ping"}
+    elif action == 'stop': message = {"request": "stop"}
+    elif action == 'play': message =  await get_next_video()
+    else:
+        logger.error(f"Invalid action: {action}")
+        abort(400)
+
+    if str(sec_id).upper() == 'ALL':
+        await send_message_to_all(message)
+    else:
+        client = await get_websocket_from_session(sec_id)
+        if client:
+            if action == 'play':
+                message =  await get_next_video()
+            await send_message(client, message)
+            client.alpha["last_request"] = message
+    return jsonify({"status": "success"})
+
+
 @api.route("/dashboard", methods=["GET"])
 async def dashboard():
     # return await render_template("dashboard.html", clients=clients)
     clients_list = [client.alpha for client in clients]
     c = []
+
+
+    icons = [{'play': '''<svg viewBox="0 0 24 24" width="24" height="24" stroke="#000000" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon></svg>''',
+              'stop': '''<svg viewBox="0 0 24 24" width="24" height="24" stroke="#000000" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><path d="M6 19l3-3 3 3M6 13l3 3-3 3M6 7l3 3-3 3"></path></svg>''',
+            }]
+
+
+    # ToDo - add icons
+    
     for id, client in enumerate(clients_list, 1):
         client['id'] = id
+        client['commands'] = f'''||play|| ||stop|| ||reload|| ||kill|| ||ping||'''
+        # <a href="http://localhost:5000/api/client/play/{client.get('sec_id')}" onclick="return;">
         c.append(client)
 
     import json2html
@@ -346,6 +439,12 @@ async def dashboard():
     }
     
     table = json2html.json2html.convert(json=c, table_attributes="id=\"info-table\" class=\"table table-bordered table-hover\"")
+
+    table = table.replace('||play||', icons[0]['play'])
+    table = table.replace('||stop||', icons[0]['play'])
+    table = table.replace('||reload||', icons[0]['play'])
+    table = table.replace('||kill||', icons[0]['play'])
+    table = table.replace('||ping||', icons[0]['play'])
 
     html = f"""
     <html>
@@ -364,7 +463,9 @@ async def dashboard():
 @api.route("/client", methods=["GET"])
 async def html():
 
-    return """
+    # session['X-Authorization'] = 'R3YKZFKBVi2'
+
+    html = """
     <!doctype html>
     <html>
     <head>
@@ -383,12 +484,20 @@ async def html():
 
 
             function connect() {
-                //var ws = new WebSocket('ws://' + document.domain + ':' + location.port + '/api/ws');
-                var ws = new WebSocket('wss://meditationbooster.org/api/ws');
+
+                //var authToken = 'R3YKZFKBVi';
+                //document.cookie = 'X-Authorization=' + authToken + '; path=/';
+
+                var url = 'ws://' + document.domain + ':' + location.port + '/api/ws'
+                // var url = 'wss://meditationbooster.org/api/ws'
+
+
+                var ws = new WebSocket(url);
                 
                 ws.debug = true;
 
                 ws.onopen = function() {
+                    $('#val').text('Connected to server, waiting for command...');
                     console.log('Socket connection established');
                     ws.send(JSON.stringify({'status': 'available'}));
                 };
@@ -409,46 +518,76 @@ async def html():
                 
                 ws.onerror = function(err) {
                     console.error('Socket encountered error: ', err.message, 'Closing socket');
+                    $('#val').text('Error detected. Retrying in 5 seconds...');
                     ws.close();
                 };
 
                 ws.onmessage = function (event) {
                     console.log('Received: ' + event.data);
                     var data = JSON.parse(event.data);
-                    console.log(data.video);
-                    console.log(data.duration);
-                    document.getElementById('yt').innerHTML = data.video;
-                    openRequestedPopup(data.video, 'Client');
-                    timer1 = setTimeout(closeWin, data.duration * 1000);
+                    var request = data.request;
                     
-                    var interval = 1, //How much to increase the progressbar per frame
-                    updatesPerSecond = data.duration*1000/60, //Set the nr of updates per second (fps)
-                    progress =  $('progress'),
-                    animator = function(){
-                        progress.val(progress.val()+interval);
-                        $('#val').text(progress.val());
-                        if ( progress.val()+interval < progress.attr('max')){
-                        setTimeout(animator, updatesPerSecond);
-                        } else { 
-                            $('#val').text('Done');
-                            progress.val(progress.attr('max'));
-                        }
-                    },
-                    reverse = function(){
-                        progress.val(progress.val() - interval);
-                        $('#val').text(progress.val());
-                        if ( progress.val() - interval > progress.attr('min')){
-                        setTimeout(reverse, updatesPerSecond);
-                        } else { 
-                            $('#val').text('Done');
-                            progress.val(progress.attr('min'));
-                        }
+                    if (request == "reload") {
+                        window.location.reload();
                     }
-                    progress.val(data.duration);
-                    timer2 = setTimeout(reverse, updatesPerSecond);
+                    if (request == "stop") {
+                        clearTimeout(window.timer1);
+                        clearTimeout(window.timer2);
+                        windowObjectReference.close();
+                        $('#val').text('Stopped from server');
+                        ws.send(JSON.stringify({'status': 'available'}));
+                    }
+                    else if (request == "ping") {
+                        console.log('ping');
+                        ws.send(JSON.stringify({'ping': 'pong'}));
+                    }
+                    else if (request == "kill") {
+                        clearTimeout(window.timer1);
+                        clearTimeout(window.timer2);
+                        windowObjectReference.close();
+                        window.open("", '_self').window.close();
+                        setTimeout (window.close, 5000);
+                        window.close();
+                        setTimeout(() => {window.close();}, 2000);
+                        setTimeout(() => {window.close();}, 4000);
+                    }
+                    else if (request == "play") {
+                        
+                        console.log(data.video);
+                        console.log(data.duration);
+                        document.getElementById('yt').innerHTML = data.video;
+                        openRequestedPopup(data.video, 'Client');
+                        timer1 = setTimeout(closeWin, data.duration * 1000);
+                        
+                        var interval = 1, //How much to increase the progressbar per frame
+                        updatesPerSecond = data.duration*1000/60, //Set the nr of updates per second (fps)
+                        progress =  $('progress'),
+                        animator = function(){
+                            progress.val(progress.val()+interval);
+                            $('#val').text(progress.val());
+                            if ( progress.val()+interval < progress.attr('max')){
+                            setTimeout(animator, updatesPerSecond);
+                            } else { 
+                                $('#val').text('Done');
+                                progress.val(progress.attr('max'));
+                            }
+                        },
+                        reverse = function(){
+                            progress.val(progress.val() - interval);
+                            $('#val').text(progress.val());
+                            if ( progress.val() - interval > progress.attr('min')){
+                            setTimeout(reverse, updatesPerSecond);
+                            } else { 
+                                $('#val').text('Done');
+                                progress.val(progress.attr('min'));
+                            }
+                        }
+                        progress.val(data.duration);
+                        timer2 = setTimeout(reverse, updatesPerSecond);
 
-                    ws.send(JSON.stringify({'status': 'playing'}));
+                        ws.send(JSON.stringify({'status': 'playing'}));
 
+                    };
                 };
 
                 function nextVideo() {
@@ -492,3 +631,8 @@ async def html():
     </body>
     </html>
     """
+
+    response = await make_response(html)
+    response.set_cookie("X-Authorization", "R3YKZFKBVi2")
+    return response
+
