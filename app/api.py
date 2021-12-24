@@ -353,7 +353,7 @@ async def ws():
                 websocket.alpha["status"] = "available"
                 websocket.alpha["updatedon"] = datetime.now()
 
-                await client_actions('play', websocket.sec_id)
+                # await client_actions('play', websocket.sec_id)
 
         except asyncio.CancelledError:
             print(f"Client disconnected. Client data: {websocket.alpha}")
@@ -524,7 +524,7 @@ async def html():
                     console.log('Socket connection established');
                     ws.send(JSON.stringify({'status': 'available'}));
                 };
-
+                
                 ws.onclose = function(event) {
                     if (event.wasClean) {
                         console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
@@ -564,7 +564,7 @@ async def html():
                     }
                     else if (request == "ping") {
                         console.log('ping');
-                        ws.send(JSON.stringify({'ping': 'pong'}));
+                        ws.send(JSON.stringify({'status': 'pong'}));
                     }
                     else if (request == "kill") {
                         clearTimeout(window.timer1);
