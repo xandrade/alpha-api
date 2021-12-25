@@ -356,6 +356,9 @@ async def ws():
             elif data.get("status") == "terminated":
                 websocket.alpha["status"] = "terminated"
                 websocket.alpha["updatedon"] = datetime.now()
+                
+                global clients
+                clients.remove(websocket._get_current_object())
 
             elif data.get("status") == "available":
                 websocket.alpha["status"] = "available"
