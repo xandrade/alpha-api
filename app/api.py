@@ -39,6 +39,9 @@ printed = f.getvalue()
 logger.info(printed)
 
 
+clients = set()
+requests_queue = asyncio.Queue()
+
 @api.app_errorhandler(403)
 def forbidden():
     return Response(
@@ -231,10 +234,6 @@ def uniqueid():
         seed += 1
 
 
-clients = set()
-requests_queue = asyncio.Queue()
-
-
 def collect_websocket(func):
     @wraps(func)
     async def wrapper(*args, **kwargs):
@@ -317,6 +316,7 @@ async def send_message_to_all(message):
         except Exception as e:
             global clients
             clients.remove(client._get_current_object())
+            logger.error(f"{e}")
 
 
 # playing next video
