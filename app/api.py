@@ -359,6 +359,7 @@ async def ws():
                 
                 global clients
                 clients.remove(websocket._get_current_object())
+                websocket.close()
 
             elif data.get("status") == "available":
                 websocket.alpha["status"] = "available"
