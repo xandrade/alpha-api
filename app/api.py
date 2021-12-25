@@ -449,9 +449,9 @@ async def dashboard():
 
 
     for id, client in enumerate(clients_list, 1):
-        client['diff'] =  humanize.naturaltime(datetime.datetime.now() - client['updatedon'])
+        client['diff'] =  humanize.naturaltime(datetime.datetime.now() - client.alpha['updatedon'])
         client['#'] = id
-        client['status'] = client['status'].capitalize()
+        client['status'] = client.alpha['status'].capitalize()
         client['commands'] = f'''
         <a href=https://meditationbooster.org/api/client/play/{client.get("sec_id")} onclick="return false;">||play||</a> 
         <a href=https://meditationbooster.org/api/client/stop/{client.get("sec_id")} onclick="return false;">||stop||</a> 
