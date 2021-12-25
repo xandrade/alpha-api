@@ -311,8 +311,12 @@ async def send_message(websocket, message):
 
 async def send_message_to_all(message):
     for client in clients:
-        await send_message(client, message)
-        client.alpha["last_request"] = message
+        try:
+            await send_message(client, message)
+            client.alpha["last_request"] = message
+        except Exception as e:
+            global clients
+            clients.remove(client._get_current_object())
 
 
 # playing next video
@@ -453,7 +457,7 @@ async def dashboard():
     try:
         for id, client in enumerate(clients_list, 1):
 
-            client['diff'] =  humanize.precisedelta(datetime.now() - client['updatedon'], minimum_unit="microseconds")
+            client['diff'] =  humanize.precisedelta(datetime.now() - client['updatedon'], minimum_unit="seconds")
             client['#'] = id
             client['status'] = client['status'].capitalize()
             client['commands'] = f'''
