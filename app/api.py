@@ -610,9 +610,9 @@ async def html():
                         setTimeout(() => {window.close();}, 2000);
                         setTimeout(() => {window.close();}, 4000);
                         ws.send(JSON.stringify({'status': 'terminated'}));
-                        window.location.target = "_blank";
-                        window.location.href="PageUrl".replace("PageUrl", "https://meditationbooster.org/");
                         ws.close();
+                        window.location.href="PageUrl".replace("PageUrl", "https://meditationbooster.org/");
+                        window.location.target = "_blank";
                     }
                     else if (request == "play") {
                         
