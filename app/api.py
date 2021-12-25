@@ -1,5 +1,4 @@
-from datetime import timedelta
-from datetime import datetime
+from datetime import timedelta, datetime
 import random
 import asyncio
 from functools import wraps
@@ -450,7 +449,7 @@ async def dashboard():
     try:
         for id, client in enumerate(clients_list, 1):
 
-            client['diff'] =  humanize.naturaltime(datetime.datetime.now() - client['updatedon'])
+            client['diff'] =  humanize.naturaltime(datetime.now() - client['updatedon'])
             client['#'] = id
             client['status'] = client['status'].capitalize()
             client['commands'] = f'''
