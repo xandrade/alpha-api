@@ -309,12 +309,12 @@ async def send_message(websocket, message):
 
 
 async def send_message_to_all(message):
+    global clients
     for client in clients:
         try:
             await send_message(client, message)
             client.alpha["last_request"] = message
         except Exception as e:
-            global clients
             clients.remove(client._get_current_object())
             logger.error(f"{e}")
 
