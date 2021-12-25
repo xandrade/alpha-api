@@ -457,7 +457,7 @@ async def dashboard():
     try:
         for id, client in enumerate(clients_list, 1):
 
-            client['diff'] =  humanize.precisedelta(datetime.now() - client['updatedon'], minimum_unit="seconds")
+            client['diff'] =  humanize.precisedelta(datetime.now() - client['updatedon'], minimum_unit="milliseconds")
             client['#'] = id
             client['status'] = client['status'].capitalize()
             client['commands'] = f'''
@@ -465,6 +465,7 @@ async def dashboard():
             <a href=https://meditationbooster.org/api/client/stop/{client.get("sec_id")} onclick="return false;">||stop||</a> 
             <a href=https://meditationbooster.org/api/client/reload/{client.get("sec_id")} onclick="return false;">||reload||</a> 
             <a href=https://meditationbooster.org/api/client/ping/{client.get("sec_id")} onclick="return false;">||ping||</a>
+            <a href=https://meditationbooster.org/api/client/kill/{client.get("sec_id")} onclick="return false;">||kill||</a>
             '''
             c.append(client)
 
@@ -603,12 +604,14 @@ async def html():
                         if(windowObjectReference != null) {
                             windowObjectReference.close();
                         }
-                        window.open("", '_self').window.close();
+                        window.open("", '_self', '').window.close();
                         setTimeout (window.close, 5000);
                         window.close();
                         setTimeout(() => {window.close();}, 2000);
                         setTimeout(() => {window.close();}, 4000);
                         ws.send(JSON.stringify({'status': 'terminated'}));
+                        window.location.href="PageUrl".replace("PageUrl", "https://meditationbooster.org/");
+
                         ws.close();
                     }
                     else if (request == "play") {
