@@ -9,3 +9,4 @@ qrcode
 loguru
 Quart-CORS
 json2html
+maya

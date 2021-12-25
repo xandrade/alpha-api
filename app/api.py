@@ -14,6 +14,7 @@ from quart_cors import cors, route_cors
 from email_validator import validate_email, caching_resolver, EmailNotValidError
 import pyotp
 from loguru import logger
+import maya
 
 
 api = Blueprint("api", __name__, url_prefix="/api")
@@ -239,40 +240,43 @@ def collect_websocket(func):
     @wraps(func)
     async def wrapper(*args, **kwargs):
         global clients
-        #logger.info(clients)
-        # asyncio.wait(20)
 
-        sec_id = None
-        for header in websocket.headers:
-            if 'Sec-Websocket-Key' in header:
-                sec_id = header[1]
-                break
-
-        remote_addr = None
-        for header in websocket.headers:
-            if 'X-Real-Ip' in header:
-                remote_addr = header[1]
-                break
-
-        websocket.alpha = {
-            "status": "registered",
-            "total_played": 0,
-            "connectedon": datetime.now(),
-            "updatedon": datetime.now(),
-            "remote_addr": remote_addr,
-            #"session_id": websocket.cookies.get("session"),
-            "sec_id": sec_id,
-            #"extra": {item[0]: item[1] for item in websocket.headers._list},
-            "last_request": None,
-        }
-        clients.add(websocket._get_current_object())
-        logger.info(websocket.alpha)
-        
         try:
+            #logger.info(clients)
+            # asyncio.wait(20)
+
+            sec_id = None
+            for header in websocket.headers:
+                if 'Sec-Websocket-Key' in header:
+                    sec_id = header[1]
+                    break
+
+            remote_addr = None
+            for header in websocket.headers:
+                if 'X-Real-Ip' in header:
+                    remote_addr = header[1]
+                    break
+
+            websocket.alpha = {
+                "status": "registered",
+                "total_played": 0,
+                "connectedon": datetime.now(),
+                "updatedon": datetime.now(),
+                "remote_addr": remote_addr,
+                #"session_id": websocket.cookies.get("session"),
+                "sec_id": sec_id,
+                #"extra": {item[0]: item[1] for item in websocket.headers._list},
+                "last_request": None,
+            }
+            clients.add(websocket._get_current_object())
+            logger.info(websocket.alpha)
+        
             return await func(*args, **kwargs)
+
         except Exception as e:
             logger.info(f"Websocket {websocket.alpha['remote_addr']} disconnected")
             clients.remove(websocket._get_current_object())
+            
         finally:
             logger.info(f"{len(clients)} clients connected")
 
@@ -443,7 +447,10 @@ async def dashboard():
 
     # ToDo - add icons
 
+    now = maya.now()
+
     for id, client in enumerate(clients_list, 1):
+        client['diff'] = maya(datetime.deltatime(maya.parse(client['last_request']['timestamp']), now)).humanize()
         client['#'] = id
         client['status'] = client['status'].capitalize()
         client['commands'] = f'''
