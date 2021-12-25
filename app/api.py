@@ -14,7 +14,7 @@ from quart_cors import cors, route_cors
 from email_validator import validate_email, caching_resolver, EmailNotValidError
 import pyotp
 from loguru import logger
-import maya
+import  humanize
 
 
 api = Blueprint("api", __name__, url_prefix="/api")
@@ -276,7 +276,7 @@ def collect_websocket(func):
         except Exception as e:
             logger.info(f"Websocket {websocket.alpha['remote_addr']} disconnected")
             clients.remove(websocket._get_current_object())
-            
+
         finally:
             logger.info(f"{len(clients)} clients connected")
 
@@ -447,10 +447,9 @@ async def dashboard():
 
     # ToDo - add icons
 
-    now = maya.now()
 
     for id, client in enumerate(clients_list, 1):
-        client['diff'] = maya(datetime.deltatime(maya.parse(client['last_request']['timestamp']), now)).humanize()
+        client['diff'] =  humanize.naturaltime(datetime.datetime.now() - client['updatedon'])
         client['#'] = id
         client['status'] = client['status'].capitalize()
         client['commands'] = f'''
