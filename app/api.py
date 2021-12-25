@@ -453,7 +453,7 @@ async def dashboard():
     try:
         for id, client in enumerate(clients_list, 1):
 
-            client['diff'] =  humanize.naturaltime(datetime.now() - client['updatedon'])
+            client['diff'] =  humanize.precisedelta(datetime.now() - client['updatedon'], minimum_unit="microseconds")
             client['#'] = id
             client['status'] = client['status'].capitalize()
             client['commands'] = f'''
