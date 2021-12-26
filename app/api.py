@@ -540,7 +540,7 @@ async def html():
                 var url = 'wss://meditationbooster.org/api/ws'
 
                 var ws = new WebSocket(url);
-                
+        
                 ws.debug = true;
 
                 ws.onopen = function() {
