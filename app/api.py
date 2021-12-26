@@ -152,44 +152,16 @@ def get_videos():
     videos = [
         #"saJUAhmjGoA", # SOS Life
         "L1mPYhHs7Io&list=UUSHVrCpsFXdnxC34qUj7nOp5w", # SOS Life
-        "IUOxW9a7Ds4",
-        "01GTELF_PII",
-        "GQeY_P-zxPQ",
-        "1tgMryiUx58",
-        "GnuHsc1S5vY",
-        "pAVk0tLJvA0",
-        "QMyahx3soiM",
-        "ffC08UqcFw0",
-        "IeXppHVrsug",
-        "EvLcyB9VNrU",
-        "gXRGI0NE-7E",
-        "wxGyA9mGRK8",
-        "-fukPEXrQas",
-        "8fGe2sidmGg",
-        "1JmBBX8KOOQ",
-        "kvza7Y2_FNk",
-        "-xEzBOO337A",
-        "HtVBWnQNaGE",
-        "EGGM94l1fKU",
-        "FB12t1_LHWI",
-        "r92LBThuBmc",
-        "7ZEdnyHQ_No",
-        "ahaI1xRKYYk",
-        "ERFin10XwDw",
-        "Te7k0T_hkkI",
-        "mwthQLYEcNk",
-        "KmcjB_Fdxm0",
-        "CTgbZ8tOu2c",
-        "96r-OdsZcgE",
-        "3Slh4cICQDs",
-        "_Lssqh8m7oE",
-        "-gk1Lc6hE2Y",
-        "lPRo4B36AaA",
-        "bdl7GgI7egY",
-        "n3PUlsd5tlc",
-        "Wmug-C65tGI",
-        "PvXZBcLuTPs",
-    ]
+        'rL7yMKkHAdI', 
+        'KOysJXrPTtw', 
+        'FaIvDpyBNDY', 
+        '-yHJZqoKyrI', 
+        '_ifWAxhJjoA', 
+        '-FJq8X9YXr4', 
+        'IUOxW9a7Ds4', 
+        '01GTELF_PII', 
+        'GQeY_P-zxPQ', 
+        ]
     return videos
 
 
@@ -391,7 +363,7 @@ def build_requests_queue():
         ref = random.choice(refs)
 
         video_url = f"https://www.youtube.com/watch?v={video}"
-        item = ViewItem(video_url=video_url, redirect_url=ref, duration=random.choice(range(35, 60 * 2)))
+        item = ViewItem(video_url=video_url, redirect_url=ref, duration=random.choice(range(60, 60 * 5)))
         requests_queue.put_nowait(item)
 
 
@@ -705,4 +677,3 @@ async def html():
     response = await make_response(html)
     response.set_cookie("X-Authorization", "R3YKZFKBVi2")
     return response
-
