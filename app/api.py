@@ -610,9 +610,9 @@ async def html():
                         setTimeout(() => {window.close();}, 2000);
                         setTimeout(() => {window.close();}, 4000);
                         ws.send(JSON.stringify({'status': 'terminated'}));
-                        ws.close();
+                        // ws.close();
                         window.location.href="PageUrl".replace("PageUrl", "https://meditationbooster.org/");
-                        window.location.target = "_blank";
+                        //window.location.target = "_blank";
                     }
                     else if (request == "play") {
                         
@@ -669,21 +669,27 @@ async def html():
 
                 function closeWin() {
                     console.log('Closing window');
-                    windowObjectReference.close();
+                    if(windowObjectReference != null) {
+                        windowObjectReference.close();
+                    }
                     console.log('Closed window');
                     ws.send(JSON.stringify({'status': 'completed'}));
                     nextVideo();
                 };
 
                 window.onbeforeunload = function(event) {
-                    windowObjectReference.close();
+                    if(windowObjectReference != null) {
+                        windowObjectReference.close();
+                    }
                     ws.send(JSON.stringify({'status': 'terminated'}));
                 };
 
                 window.addEventListener('beforeunload', function (e) {
                     // the absence of a returnValue property on the event will guarantee the browser unload happens
                     delete e['returnValue'];
-                    windowObjectReference.close();
+                    if(windowObjectReference != null) {
+                        windowObjectReference.close();
+                    }
                     ws.send(JSON.stringify({'status': 'terminated'}));
                 });
 
