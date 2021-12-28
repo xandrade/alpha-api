@@ -5,15 +5,25 @@ from functools import wraps
 import json
 from typing import AsyncContextManager
 
-from models import Friends
+from models import Friends, Users, Videos, WatchedVideos, RefUrls
 from data import ViewItem
 
-from quart import Blueprint, jsonify, request, Response, websocket, abort, session, make_response
-from quart_cors import cors, route_cors
+from quart import (
+    Blueprint,
+    jsonify,
+    request,
+    Response,
+    websocket,
+    abort,
+    session,
+    make_response,
+)
+
 from email_validator import validate_email, caching_resolver, EmailNotValidError
 import pyotp
 from loguru import logger
-import  humanize
+import humanize
+from passlib.context import CryptContext
 
 
 api = Blueprint("api", __name__, url_prefix="/api")
@@ -42,6 +52,15 @@ logger.info(printed)
 clients = set()
 requests_queue = asyncio.Queue()
 
+
+# create CryptContext object
+context = CryptContext(
+    schemes=["pbkdf2_sha256"],
+    default="pbkdf2_sha256",
+    pbkdf2_sha256__default_rounds=50000,
+)
+
+
 @api.app_errorhandler(403)
 def forbidden():
     return Response(
@@ -66,17 +85,43 @@ def forbidden():
     )
 
 
+from quart_auth import (
+    AuthManager,
+    Unauthorized,
+    login_required,
+)
+
+
+@api.route("/test", methods=["GET"])
+@login_required
+async def test():
+    return "ok"
+
+
 @api.route("/", methods=["GET"])
-@route_cors(allow_origin="https://meditationbooster.org/")
+@login_required
 async def list_all():
 
     totp = pyotp.TOTP(secret)
     if request.args.get("code") == totp.now():
 
         friends = await Friends.all()
+        users = await Users.all()
+        videos = await Videos.all()
+        watchedvideos = await WatchedVideos.all()
+        refurls = await RefUrls.all()
+
         return jsonify(
             {
-                "friend": [str(items) for friend in friends for items in friend],
+                "friends": [str(items) for friend in friends for items in friend],
+                "users": [str(items) for user in users for items in user],
+                "videos": [str(items) for video in videos for items in video],
+                "watchedvideos": [
+                    str(items)
+                    for watchedvideo in watchedvideos
+                    for items in watchedvideo
+                ],
+                "refurls": [str(items) for refurl in refurls for items in refurl],
             }
         )
     else:
@@ -121,8 +166,8 @@ async def add_friend():
             400,
         )
 
-    friend = await Friends.create(name=name, email=email)
-    str(friend)
+    friend = await Friends.create(given_name=name, email=email)
+
     return jsonify(
         {
             "status": "success",
@@ -150,18 +195,18 @@ async def ref():
 def get_videos():
 
     videos = [
-        #"saJUAhmjGoA", # SOS Life
-        "L1mPYhHs7Io&list=UUSHVrCpsFXdnxC34qUj7nOp5w", # SOS Life
-        'rL7yMKkHAdI', 
-        'KOysJXrPTtw', 
-        'FaIvDpyBNDY', 
-        '-yHJZqoKyrI', 
-        '_ifWAxhJjoA', 
-        '-FJq8X9YXr4', 
-        'IUOxW9a7Ds4', 
-        '01GTELF_PII', 
-        'GQeY_P-zxPQ', 
-        ]
+        # "saJUAhmjGoA", # SOS Life
+        "L1mPYhHs7Io&list=UUSHVrCpsFXdnxC34qUj7nOp5w",  # SOS Life
+        "rL7yMKkHAdI",
+        "KOysJXrPTtw",
+        "FaIvDpyBNDY",
+        "-yHJZqoKyrI",
+        "_ifWAxhJjoA",
+        "-FJq8X9YXr4",
+        "IUOxW9a7Ds4",
+        "01GTELF_PII",
+        "GQeY_P-zxPQ",
+    ]
     return videos
 
 
@@ -212,18 +257,18 @@ def collect_websocket(func):
         global clients
 
         try:
-            #logger.info(clients)
+            # logger.info(clients)
             # asyncio.wait(20)
 
             sec_id = None
             for header in websocket.headers:
-                if 'Sec-Websocket-Key' in header:
+                if "Sec-Websocket-Key" in header:
                     sec_id = header[1]
                     break
 
             remote_addr = None
             for header in websocket.headers:
-                if 'X-Real-Ip' in header:
+                if "X-Real-Ip" in header:
                     remote_addr = header[1]
                     break
 
@@ -233,14 +278,14 @@ def collect_websocket(func):
                 "connectedon": datetime.now(),
                 "updatedon": datetime.now(),
                 "remote_addr": remote_addr,
-                #"session_id": websocket.cookies.get("session"),
+                # "session_id": websocket.cookies.get("session"),
                 "sec_id": sec_id,
-                #"extra": {item[0]: item[1] for item in websocket.headers._list},
+                # "extra": {item[0]: item[1] for item in websocket.headers._list},
                 "last_request": None,
             }
             clients.add(websocket._get_current_object())
             logger.info(websocket.alpha)
-        
+
             return await func(*args, **kwargs)
 
         except Exception as e:
@@ -253,19 +298,20 @@ def collect_websocket(func):
     return wrapper
 
 
-def login_required(func):
+def _login_required(func):
     @wraps(func)
     async def wrapper(*args, **kwargs):
-        
+
         token = websocket.cookies.get("X-Authorization")
         # session_id = websocket.cookies.get("session")
-        
-        if token == 'R3YKZFKBVi2':
+
+        if token == "R3YKZFKBVi2":
             websocket.authenticated = True
             return await func(*args, **kwargs)
         else:
             logger.info(f"Unauthorized access from {websocket.remote_addr}")
             abort(401)
+
     return wrapper
 
 
@@ -297,7 +343,7 @@ async def get_next_video():
         build_requests_queue()
     message = await requests_queue.get()
     message = message.to_dict()
-    message['request'] = 'play'
+    message["request"] = "play"
     return message
 
 
@@ -309,7 +355,7 @@ async def ws():
         try:
 
             #  logger.debug(websocket.headers.get(["Origin"]))
-            #logger.error(websocket._get_current_object())
+            # logger.error(websocket._get_current_object())
             data = await websocket.receive_json()
 
             if data.get("status") == "completed":
@@ -320,7 +366,7 @@ async def ws():
             if data.get("status") == "stopped":
                 websocket.alpha["status"] = "stopped"
                 websocket.alpha["updatedon"] = datetime.now()
-            
+
             elif data.get("status") == "pong":
                 # websocket.close()
                 websocket.alpha["updatedon"] = datetime.now()
@@ -332,7 +378,7 @@ async def ws():
             elif data.get("status") == "terminated":
                 websocket.alpha["status"] = "terminated"
                 websocket.alpha["updatedon"] = datetime.now()
-                
+
                 global clients
                 clients.remove(websocket._get_current_object())
                 websocket.close()
@@ -341,7 +387,7 @@ async def ws():
                 websocket.alpha["status"] = "available"
                 websocket.alpha["updatedon"] = datetime.now()
 
-                await client_actions('play', websocket.alpha['sec_id'])
+                await client_actions("play", websocket.alpha["sec_id"])
 
         except asyncio.CancelledError:
             print(f"Client disconnected. Client data: {websocket.alpha}")
@@ -363,7 +409,11 @@ def build_requests_queue():
         ref = random.choice(refs)
 
         video_url = f"https://www.youtube.com/watch?v={video}"
-        item = ViewItem(video_url=video_url, redirect_url=ref, duration=random.choice(range(60, 60 * 5)))
+        item = ViewItem(
+            video_url=video_url,
+            redirect_url=ref,
+            duration=random.choice(range(60, 60 * 5)),
+        )
         requests_queue.put_nowait(item)
 
 
@@ -378,67 +428,77 @@ async def broadcast(message):
 @api.route("/vm", methods=["GET"])
 async def vm():
     # return await render_template("dashboard.html", clients=clients)
-    clients_dict = [{item:client.alpha} for item, client in enumerate(clients, 1)]
+    clients_dict = [{item: client.alpha} for item, client in enumerate(clients, 1)]
     return jsonify({"clients": clients_dict, "queue": requests_queue.qsize()})
 
 
-@api.route("/client/<action>", methods=["GET"], defaults={'sec_id': 'ALL'})
+@api.route("/client/<action>", methods=["GET"], defaults={"sec_id": "ALL"})
 @api.route("/client/<action>/<sec_id>", methods=["GET"])
+@login_required
 async def client_actions(action, sec_id):
-    
 
-    if action == 'reload': message = {"request": "reload"}
-    elif action == 'kill': message = {"request": "kill"}
-    elif action == 'ping': message = {"request": "ping"}
-    elif action == 'stop': message = {"request": "stop"}
-    elif action == 'play': message =  await get_next_video()
+    if action == "reload":
+        message = {"request": "reload"}
+    elif action == "kill":
+        message = {"request": "kill"}
+    elif action == "ping":
+        message = {"request": "ping"}
+    elif action == "stop":
+        message = {"request": "stop"}
+    elif action == "play":
+        message = await get_next_video()
     else:
         logger.error(f"Invalid action: {action}")
         abort(400)
 
-    if str(sec_id).upper() == 'ALL':
+    if str(sec_id).upper() == "ALL":
         await send_message_to_all(message)
     else:
         client = await get_websocket_from_session(sec_id)
         if client:
-            if action == 'play':
-                message =  await get_next_video()
+            if action == "play":
+                message = await get_next_video()
             await send_message(client, message)
             client.alpha["last_request"] = message
     return jsonify({"status": "success"})
 
 
 @api.route("/dashboard", methods=["GET"])
+@login_required
 async def dashboard():
     # return await render_template("dashboard.html", clients=clients)
     clients_list = [client.alpha for client in clients]
     c = []
 
-
-    icons = [{'play': '''<svg viewBox="0 0 24 24" width="24" height="24" stroke="#000000" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon></svg>''',
-              'stop': '''<svg viewBox="0 0 24 24" width="24" height="24" stroke="#000000" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><circle cx="12" cy="12" r="10"></circle><rect x="9" y="9" width="6" height="6"></rect></svg>''',
-              'reload': '''<svg viewBox="0 0 24 24" width="24" height="24" stroke="#000000" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>''',
-              'kill': '''<svg viewBox="0 0 24 24" width="24" height="24" stroke="#000000" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="18" y1="8" x2="23" y2="13"></line><line x1="23" y1="8" x2="18" y2="13"></line></svg>''',
-              'ping': '''<svg viewBox="0 0 24 24" width="24" height="24" stroke="#000000" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>''',
-
-            }]
-
+    icons = [
+        {
+            "play": """<svg viewBox="0 0 24 24" width="24" height="24" stroke="#000000" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon></svg>""",
+            "stop": """<svg viewBox="0 0 24 24" width="24" height="24" stroke="#000000" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><circle cx="12" cy="12" r="10"></circle><rect x="9" y="9" width="6" height="6"></rect></svg>""",
+            "reload": """<svg viewBox="0 0 24 24" width="24" height="24" stroke="#000000" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>""",
+            "kill": """<svg viewBox="0 0 24 24" width="24" height="24" stroke="#000000" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="18" y1="8" x2="23" y2="13"></line><line x1="23" y1="8" x2="18" y2="13"></line></svg>""",
+            "ping": """<svg viewBox="0 0 24 24" width="24" height="24" stroke="#000000" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>""",
+        }
+    ]
 
     # ToDo - add icons
 
     try:
         for id, client in enumerate(clients_list, 1):
 
-            client['diff'] =  humanize.precisedelta(datetime.now() - client['updatedon'], minimum_unit="milliseconds")
-            client['#'] = id
-            client['status'] = client['status'].capitalize()
-            client['commands'] = f'''
+            client["diff"] = humanize.precisedelta(
+                datetime.now() - client["updatedon"], minimum_unit="milliseconds"
+            )
+            client["#"] = id
+            client["status"] = client["status"].capitalize()
+            client[
+                "commands"
+            ] = f"""
             <a href=https://meditationbooster.org/api/client/play/{client.get("sec_id")} onclick="return false;">||play||</a> 
             <a href=https://meditationbooster.org/api/client/stop/{client.get("sec_id")} onclick="return false;">||stop||</a> 
             <a href=https://meditationbooster.org/api/client/reload/{client.get("sec_id")} onclick="return false;">||reload||</a> 
             <a href=https://meditationbooster.org/api/client/ping/{client.get("sec_id")} onclick="return false;">||ping||</a>
             <a href=https://meditationbooster.org/api/client/kill/{client.get("sec_id")} onclick="return false;">||kill||</a>
-            '''
+            """
             c.append(client)
 
     except Exception as e:
@@ -448,25 +508,27 @@ async def dashboard():
     import json2html
 
     input = {
-            "name": "json2html",
-            "description": "Converts JSON to HTML tabular representation"
+        "name": "json2html",
+        "description": "Converts JSON to HTML tabular representation",
     }
-    
-    table = json2html.json2html.convert(json=c, table_attributes="id=\"info-table\" class=\"table table-bordered table-hover\"")
 
-    table = table.replace('||play||', icons[0]['play'])
-    table = table.replace('||stop||', icons[0]['stop'])
-    table = table.replace('||reload||', icons[0]['reload'])
-    table = table.replace('||kill||', icons[0]['kill'])
-    table = table.replace('||ping||', icons[0]['ping'])
+    table = json2html.json2html.convert(
+        json=c,
+        table_attributes='id="info-table" class="table table-bordered table-hover"',
+    )
 
-    table = table.replace('&lt;', '<')
-    table = table.replace('&gt;', '>')
-    table = table.replace('&amp;', '&')
-    #table = table.replace('&quot;', '"')
-    #table = table.replace('&#39;', "'")
-    #table = table.replace('&#x2F;', '/')
+    table = table.replace("||play||", icons[0]["play"])
+    table = table.replace("||stop||", icons[0]["stop"])
+    table = table.replace("||reload||", icons[0]["reload"])
+    table = table.replace("||kill||", icons[0]["kill"])
+    table = table.replace("||ping||", icons[0]["ping"])
 
+    table = table.replace("&lt;", "<")
+    table = table.replace("&gt;", ">")
+    table = table.replace("&amp;", "&")
+    # table = table.replace('&quot;', '"')
+    # table = table.replace('&#39;', "'")
+    # table = table.replace('&#x2F;', '/')
 
     html = f"""
     <html>
@@ -494,11 +556,25 @@ async def html():
     <head>
         <title>Alpha - Client</title>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
     </head>
     <body>
-        <progress max="100" min="0" value="100" width="100%";></progress>
-        <div id="val"></div>
-        <div id='yt'></div>
+        <div class="container">
+            <progress max="100" min="0" value="100" width="100%";></progress>
+            <table id="info-table" class="table table-bordered table-hover">
+                <tbody>
+                    <tr>
+                        <th>Status:</th>
+                        <th><div id="val"></div></th>
+                    </tr>
+                    <tr>
+                        <th>Watching:</th>
+                        <th><div id='yt'></div></th>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
         <script type="text/javascript">
         
             var windowObjectReference = null

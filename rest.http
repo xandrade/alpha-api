@@ -1,0 +1,70 @@
+@baseUrl = http://localhost:5000/authwall
+
+
+# @name register
+POST {{baseUrl}}/register HTTP/1.1
+Content-Type: application/json
+
+{
+    "email": "email@email.com",
+    "pwd": "password"
+}
+
+###
+
+# @name login
+POST {{baseUrl}}/login HTTP/1.1
+Content-Type: application/json
+
+{
+    "email": "email@email.com",
+    "pwd": "password"
+}
+
+###
+
+@QUART_AUTH = {{login.response.headers.set-cookie}}
+
+# @name test
+GET {{baseUrl}}/ HTTP/1.1
+Cookie: {{QUART_AUTH}}
+
+###
+
+GET {{baseUrl}}/HTTP/1.1
+
+###
+# @name logout
+GET {{baseUrl}}/logout HTTP/1.1
+
+###
+
+@authToken = {{login.response.headers.X-AuthToken}}
+
+# @name createComment
+POST {{baseUrl}}/login HTTP/1.1
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+    "email": "email@email.com",
+    "pwd": "password"
+}
+###
+
+@commentId = {{createComment.response.body.$.id}}
+
+# @name getCreatedComment
+GET {{baseUrl}}/comments/{{commentId}} HTTP/1.1
+Authorization: {{authToken}}
+
+###
+
+# @name getReplies
+GET {{baseUrl}}/comments/{{commentId}}/replies HTTP/1.1
+Accept: application/xml
+
+###
+
+# @name getFirstReply
+GET {{baseUrl}}/comments/{{commentId}}/replies/{{getReplies.response.body.//reply[1]/@id}}

@@ -1,5 +1,6 @@
 quart
 tortoise-orm[asyncpg]
+tortoise-orm[accel]
 uvloop
 hypercorn[uvloop]
 email_validator
@@ -7,6 +8,8 @@ rsa
 pyotp
 qrcode
 loguru
-Quart-CORS
 json2html
 humanize
+passlib
+quart-auth
+python-dotenv
