@@ -10,6 +10,7 @@ qrcode
 loguru
 json2html
 humanize
-passlib
 quart-auth
 python-dotenv
+quart-bcrypt
+pytest-asyncio

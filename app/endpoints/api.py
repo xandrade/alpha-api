@@ -1,12 +1,17 @@
-from datetime import timedelta, datetime
+from datetime import datetime
 import random
 import asyncio
 from functools import wraps
 import json
-from typing import AsyncContextManager
+import os
+import sys
 
-from models import Friends, Users, Videos, WatchedVideos, RefUrls
-from data import ViewItem
+# script_dir = os.path.dirname(__file__)
+# mymodule_dir = os.path.join(script_dir, "..", "user")
+# sys.path.append(mymodule_dir)
+from app.user.models import Friends, Users, Videos, WatchedVideos, RefUrls
+
+from app.data import ViewItem
 
 from quart import (
     Blueprint,
@@ -17,6 +22,7 @@ from quart import (
     abort,
     session,
     make_response,
+    current_app,
 )
 
 from email_validator import validate_email, caching_resolver, EmailNotValidError
@@ -26,7 +32,7 @@ import humanize
 from passlib.context import CryptContext
 
 
-api = Blueprint("api", __name__, url_prefix="/api")
+api = Blueprint("api", __name__, url_prefix="/api", static_folder="../static")
 
 secret = pyotp.random_base32()
 
@@ -98,8 +104,30 @@ async def test():
     return "ok"
 
 
+from functools import wraps
+from quart_auth import current_user
+
+
+def login_required_ext(only_admin=False):
+    def login_required(func):
+        """A decorator to restrict route access to authenticated users and admins"""
+
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            if not await current_user.is_authenticated:
+                raise Unauthorized()
+            elif only_admin and not await current_user.is_admin:
+                raise Unauthorized()
+            else:
+                return await current_app.ensure_async(func)(*args, **kwargs)
+
+        return wrapper
+
+    return login_required
+
+
 @api.route("/", methods=["GET"])
-@login_required
+@login_required_ext(only_admin=True)
 async def list_all():
 
     totp = pyotp.TOTP(secret)
@@ -178,6 +206,7 @@ async def add_friend():
 
 
 @api.route("/ref", methods=["GET"])
+@login_required_ext(only_admin=False)
 async def ref():
     url = request.args.get("url")
     logger.info(url)

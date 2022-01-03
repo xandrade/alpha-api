@@ -1,8 +1,9 @@
 from datetime import timedelta, datetime
 import asyncio
 from functools import wraps
+from unicodedata import name
 
-from models import Friends, Users, Videos, WatchedVideos, RefUrls
+from .models import Friends, Users, Videos, WatchedVideos, RefUrls
 
 from quart import (
     Blueprint,
@@ -12,16 +13,17 @@ from quart import (
     redirect,
     url_for,
     abort,
+    render_template,
+    make_response,
 )
 from quart_auth import AuthUser, login_user, logout_user, current_user, login_required
 
-from email_validator import validate_email, caching_resolver, EmailNotValidError
+from email_validator import validate_email
 import pyotp
 from loguru import logger
-from passlib.context import CryptContext
 
 
-authwall = Blueprint("authwall", __name__, url_prefix="/authwall")
+auth = Blueprint("auth", __name__, url_prefix="/auth", static_folder="../static")
 
 secret = pyotp.random_base32()
 
@@ -38,21 +40,13 @@ qr.add_data(uri)
 f = io.StringIO()
 qr.print_ascii(out=f)
 printed = f.getvalue()
-# f.seek(0)
-# print(f.read())
-# logger.info(f.read())
 logger.info(printed)
 
 
-# create CryptContext object
-pwd_context = CryptContext(
-    schemes=["pbkdf2_sha256"],
-    default="pbkdf2_sha256",
-    pbkdf2_sha256__default_rounds=50000,
-)
+# ToDo: return abort(403) is returning an error
 
 
-@authwall.app_errorhandler(403)
+@auth.app_errorhandler(403)
 def forbidden():
     return Response(
         jsonify(
@@ -76,34 +70,41 @@ def forbidden():
     )
 
 
-@authwall.route("/", methods=["GET"])
+@auth.route("/")
+@auth.route("/home")
+@auth.route("/a")
 @login_required
-async def restricted_route():
-    if await current_user.is_authenticated:
-        return jsonify({"message": "You are logged in!"})
-    else:
-        return redirect(url_for("authwall.login"))
+async def members():
+    """List members."""
+    # return await render_template("users/members.html")
+    return jsonify({"message": f"Hello, World! {datetime.utcnow().isoformat()}"}), 200
 
 
-@authwall.route("/logout", methods=["GET"])
+@auth.route("/logout", methods=["GET"])
 async def logout():
     logout_user()
-    return redirect(url_for("authwall.login"))
+    return redirect(
+        url_for("auth.login"),
+    )
 
 
-@authwall.route("/login", methods=["GET"])
+@auth.route("/logon", methods=["GET"])
 async def login_get():
     return "please login"
 
 
-@authwall.route("/login", methods=["POST"])
+@auth.route("/logon", methods=["POST"])
 async def login():
+
+    print(request)
 
     data = await request.get_json()
 
+    print(data)
+
     if data:
         email = data.get("email")
-        password = data.get("pwd")
+        password = data.get("password")
 
         if not email or not password:
             return jsonify({"message": "Missing email or password"}), 400
@@ -112,11 +113,17 @@ async def login():
         if not user:
             return jsonify({"message": "User not found"}), 404
 
-        if not pwd_context.verify(password, user.password):
+        if not user.check_password(password):
+            print("nothing")
             return abort(403)
 
-        if user.is_active:
-            login_user(AuthUser(user.email))
+        if user.active:
+            auth = AuthUser(user.id)
+            auth.email = user.email
+            auth.is_admin = user.is_admin
+            auth.username = user.username
+            auth.full_name = user.full_name
+            login_user(auth)
             return jsonify({"message": "Logged in successfully"})
         else:
             return jsonify({"message": "User is not active"}), 403
@@ -125,53 +132,49 @@ async def login():
         return jsonify({"message": "Missing data"}), 400
 
 
-@authwall.route("/register", methods=["POST"])
+@auth.route("/signup", methods=["POST"])
 async def register():
 
     data = await request.get_json()
+    first_name = data.get("first_name")
+    last_name = data.get("last_name")
+    username = data.get("username")
     email = data.get("email")
-    password = data.get("pwd")
+    password = data.get("password")
 
-    if not email or not password:
-        return jsonify({"message": "Missing email or password"}), 400
+    if not email or not password or not username or not first_name or not last_name:
+        return jsonify({"message": "Missing data"}), 400
 
     if not validate_email(email):
         return jsonify({"message": "Invalid email"}), 400
-
-    resolver = caching_resolver(timeout=10)
-    try:
-        valid = validate_email(email, dns_resolver=resolver)
-        email = valid.email
-    except EmailNotValidError as e:
-        return (
-            jsonify(
-                {
-                    "status": "error",
-                    "message": "Invalid email",
-                }
-            ),
-            400,
-        )
 
     user = await Users.filter(email=email).first()
     if not user:
         user = await Users.create(
             email=email,
-            password=pwd_context.hash(password),
+            username=username,
+            first_name=first_name,
+            last_name=last_name,
         )
+        user.password = password
+        await user.save()
 
-        return jsonify(
-            {
-                "status": "success",
-                "message": "Thank you for sign-in!",
-            },
+        return (
+            jsonify(
+                {
+                    "status": "success",
+                    "message": "Thank you for sign-in!",
+                }
+            ),
             200,
         )
     else:
-        return jsonify(
-            {
-                "status": "error",
-                "message": "User already exists",
-            },
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": "User already exists",
+                }
+            ),
             400,
         )
