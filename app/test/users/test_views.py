@@ -10,12 +10,19 @@ from app.user.models import Users, Friends, Videos, WatchedVideos, RefUrls
 @pytest.mark.asyncio
 async def test_app(client):
 
+    # Check rederected from the auth blueprint
     response = await client.get("/auth")
+    assert response.status_code == 308
+
+    # Follow redirect and check if can access
+    response = await client.get("/auth", follow_redirects=True)
     assert response.status_code == 401
 
+    # Check if can access
     response = await client.get("/auth/")
     assert response.status_code == 401
 
+    # Create user
     response = await client.post(
         "/auth/signup",
         json={
@@ -29,27 +36,246 @@ async def test_app(client):
     assert response.status_code == 200  # redirected to login
     assert (await response.get_json()) == {
         "status": "success",
-        "message": "Thank you for sign-in!",
+        "message": "Thank you for sign-in!.",
     }
 
+    # Create duplicate user
+    response = await client.post(
+        "/auth/signup",
+        json={
+            "email": "test@test.com",
+            "password": "password",
+            "username": "username",
+            "first_name": "firt name",
+            "last_name": "last name",
+        },
+    )
+    assert response.status_code == 400
+    assert (await response.get_json()) == {
+        "status": "unsuccess",
+        "message": "User already exists.",
+    }
+
+    # Create user with missing email
+    response = await client.post(
+        "/auth/signup",
+        json={
+            "password": "password",
+            "username": "username",
+            "first_name": "firt name",
+            "last_name": "last name",
+        },
+    )
+    assert response.status_code == 400
+    assert (await response.get_json()) == {
+        "status": "unsuccess",
+        "message": "Missing data.",
+    }
+
+    # Create user with missing password
+    response = await client.post(
+        "/auth/signup",
+        json={
+            "email": "test@test.com",
+            "username": "username",
+            "first_name": "firt name",
+            "last_name": "last name",
+        },
+    )
+    assert response.status_code == 400
+    assert (await response.get_json()) == {
+        "status": "unsuccess",
+        "message": "Missing data.",
+    }
+
+    # Create user with missing username
+    response = await client.post(
+        "/auth/signup",
+        json={
+            "email": "test@test.com",
+            "password": "password",
+            "first_name": "firt name",
+            "last_name": "last name",
+        },
+    )
+    assert response.status_code == 400
+    assert (await response.get_json()) == {
+        "status": "unsuccess",
+        "message": "Missing data.",
+    }
+
+    # Create user with missing first name
+    response = await client.post(
+        "/auth/signup",
+        json={
+            "email": "test@test.com",
+            "password": "password",
+            "username": "username",
+            "last_name": "last name",
+        },
+    )
+    assert response.status_code == 400
+    assert (await response.get_json()) == {
+        "status": "unsuccess",
+        "message": "Missing data.",
+    }
+
+    # Create user with missing last name
+    response = await client.post(
+        "/auth/signup",
+        json={
+            "email": "test@test.com",
+            "password": "password",
+            "username": "username",
+            "first_name": "firt name",
+        },
+    )
+    assert response.status_code == 400
+    assert (await response.get_json()) == {
+        "status": "unsuccess",
+        "message": "Missing data.",
+    }
+
+    response = await client.post(
+        "/auth/signup",
+        json={
+            "email": "test.com",
+            "password": "password",
+            "username": "username",
+            "first_name": "firt name",
+            "last_name": "last name",
+        },
+    )
+    assert response.status_code == 400
+    r = await response.get_json()
+    assert r["status"] == "unsuccess"
+
+    response = await client.post(
+        "/auth/signup",
+        json={
+            "email": "test@test..com",
+            "password": "password",
+            "username": "username",
+            "first_name": "firt name",
+            "last_name": "last name",
+        },
+    )
+    assert response.status_code == 400
+    r = await response.get_json()
+    assert r["status"] == "unsuccess"
+
+    response = await client.post(
+        "/auth/signup",
+        json={
+            "email": "чебурашкаящик-с-апельсинами.рф@example.tld'",
+            "password": "password",
+            "username": "username",
+            "first_name": "firt name",
+            "last_name": "last name",
+        },
+    )
+    assert response.status_code == 400
+    r = await response.get_json()
+    assert r["status"] == "unsuccess"
+
+    # Check loging with user
     response = await client.post(
         "/auth/logon",
         json={"email": "test@test.com", "password": "password"},
     )
     assert response.status_code == 200
-    assert (await response.get_json()) == {"message": "Logged in successfully"}
+    assert (await response.get_json()) == {
+        "status": "success",
+        "message": "Logged in successfully.",
+    }
 
-    response = await client.get("/auth/a")
-    assert response.status_code == 200
+    # check if can access some routes
+    routes = [
+        "/auth/home",
+        "/auth/a",
+        "/auth/",
+    ]
+    for route in routes:
+        response = await client.get(route)
+        assert response.status_code == 200
 
-    response = await client.get("/auth/home")
-    assert response.status_code == 200
-
-    response = await client.get("/auth/")
-    assert response.status_code == 200
-
+    # Test loging out
     response = await client.get("/auth/logout")
     assert response.status_code == 302  # redirected to login
+
+    # Check if can access restricted routes after logged out
+    for route in routes:
+        response = await client.get(route)
+        assert response.status_code == 401
+
+    # Check loging with wrong or unexisted user
+    response = await client.post(
+        "/auth/logon",
+        json={"email": "wrong@test.com", "password": "password"},
+    )
+    assert response.status_code == 404
+    assert (await response.get_json()) == {
+        "status": "unsuccess",
+        "message": "User is not registered.",
+    }
+
+    # Check loging with wrong password
+    response = await client.post(
+        "/auth/logon",
+        json={"email": "test@test.com", "password": "unlocked"},
+    )
+    assert response.status_code == 403
+    assert (await response.get_json()) == {
+        "status": "unsuccess",
+        "message": "The server could not verify that you are authorized to access the URL requested. You either supplied the wrong credentials (e.g. a bad password), or your browser doesn't understand how to supply the credentials required.",
+    }
+
+    # Check loging with no email
+    response = await client.post(
+        "/auth/logon",
+        json={"password": "password"},
+    )
+    assert response.status_code == 400
+    assert (await response.get_json()) == {
+        "status": "unsuccess",
+        "message": "Missing email or password.",
+    }
+
+    # Check loging with no password
+    response = await client.post(
+        "/auth/logon",
+        json={
+            "email": "test@test.com",
+        },
+    )
+    assert response.status_code == 400
+    assert (await response.get_json()) == {
+        "status": "unsuccess",
+        "message": "Missing email or password.",
+    }
+
+    # Check loging with no data (json)
+    response = await client.post(
+        "/auth/logon",
+    )
+    assert response.status_code == 400
+    assert (await response.get_json()) == {
+        "status": "unsuccess",
+        "message": "The server could not verify that you are authorized to access the URL requested. You either supplied the wrong credentials (e.g. a bad password), or your browser doesn't understand how to supply the credentials required.",
+    }
+
+    await Users.filter(email="test@test.com").update(active=False)
+
+    # Check loging with inactive user
+    response = await client.post(
+        "/auth/logon",
+        json={"email": "test@test.com", "password": "password"},
+    )
+    assert response.status_code == 403
+    assert (await response.get_json()) == {
+        "status": "unsuccess",
+        "message": "User is not active.",
+    }
 
 
 class TestUsers(test.TestCase):

@@ -646,8 +646,8 @@ async def html():
                 
                 ws.onerror = function(err) {
                     console.error('Socket encountered error: ', err.message, 'Closing socket');
-                    $('#val').text('Error detected. Retrying in 5 seconds...');
-                    ws.close();
+                    // $('#val').text('Error detected. Retrying in 5 seconds...');
+                    // ws.close();
                 };
 
                 ws.onmessage = function (event) {

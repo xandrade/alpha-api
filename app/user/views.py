@@ -1,3 +1,4 @@
+from copy import Error
 from datetime import timedelta, datetime
 import asyncio
 from functools import wraps
@@ -18,7 +19,13 @@ from quart import (
 )
 from quart_auth import AuthUser, login_user, logout_user, current_user, login_required
 
-from email_validator import validate_email
+from email_validator import (
+    validate_email,
+    caching_resolver,
+    EmailNotValidError,
+    EmailSyntaxError,
+    EmailUndeliverableError,
+)
 import pyotp
 from loguru import logger
 
@@ -41,33 +48,6 @@ f = io.StringIO()
 qr.print_ascii(out=f)
 printed = f.getvalue()
 logger.info(printed)
-
-
-# ToDo: return abort(403) is returning an error
-
-
-@auth.app_errorhandler(403)
-def forbidden():
-    return Response(
-        jsonify(
-            {
-                "error": {
-                    "code": 403,
-                    "message": "The request is missing a valid API key.",
-                    "errors": [
-                        {
-                            "message": "The request is missing a valid API key.",
-                            "domain": "global",
-                            "reason": "forbidden",
-                        }
-                    ],
-                    "status": "PERMISSION_DENIED",
-                }
-            }
-        ),
-        status=403,  # HTTP Status 403 Forbidden
-        headers={"WWW-Authenticate": "Basic realm='Login Required'"},
-    )
 
 
 @auth.route("/")
@@ -107,15 +87,35 @@ async def login():
         password = data.get("password")
 
         if not email or not password:
-            return jsonify({"message": "Missing email or password"}), 400
+            return (
+                jsonify(
+                    {"status": "unsuccess", "message": "Missing email or password."}
+                ),
+                400,
+            )
 
         user = await Users.filter(email=email).first()
         if not user:
-            return jsonify({"message": "User not found"}), 404
+            return (
+                jsonify(
+                    {
+                        "status": "unsuccess",
+                        "message": "User is not registered.",
+                    }
+                ),
+                404,
+            )
 
         if not user.check_password(password):
-            print("nothing")
-            return abort(403)
+            return (
+                jsonify(
+                    {
+                        "status": "unsuccess",
+                        "message": "The server could not verify that you are authorized to access the URL requested. You either supplied the wrong credentials (e.g. a bad password), or your browser doesn't understand how to supply the credentials required.",
+                    }
+                ),
+                403,
+            )
 
         if user.active:
             auth = AuthUser(user.id)
@@ -124,12 +124,28 @@ async def login():
             auth.username = user.username
             auth.full_name = user.full_name
             login_user(auth)
-            return jsonify({"message": "Logged in successfully"})
+            return jsonify(
+                {
+                    "status": "success",
+                    "message": "Logged in successfully.",
+                }
+            )
         else:
-            return jsonify({"message": "User is not active"}), 403
+            return (
+                jsonify({"status": "unsuccess", "message": "User is not active."}),
+                403,
+            )
 
     else:
-        return jsonify({"message": "Missing data"}), 400
+        return (
+            jsonify(
+                {
+                    "status": "unsuccess",
+                    "message": "The server could not verify that you are authorized to access the URL requested. You either supplied the wrong credentials (e.g. a bad password), or your browser doesn't understand how to supply the credentials required.",
+                }
+            ),
+            400,
+        )
 
 
 @auth.route("/signup", methods=["POST"])
@@ -143,10 +159,24 @@ async def register():
     password = data.get("password")
 
     if not email or not password or not username or not first_name or not last_name:
-        return jsonify({"message": "Missing data"}), 400
+        return jsonify({"status": "unsuccess", "message": "Missing data."}), 400
 
-    if not validate_email(email):
-        return jsonify({"message": "Invalid email"}), 400
+    message = None
+    try:
+        resolver = caching_resolver(timeout=10)
+        valid = validate_email(email, dns_resolver=resolver)
+        email = valid.email
+    except EmailNotValidError as e:
+        message = jsonify({"status": "unsuccess", "message": e.args[0]}), 400
+    except EmailSyntaxError as e:
+        message = jsonify({"status": "unsuccess", "message": e.args[0]}), 400
+    except EmailUndeliverableError as e:
+        message = jsonify({"status": "unsuccess", "message": e.args[0]}), 412
+    except Error as e:
+        message = jsonify({"status": "unsuccess", "message": e.args[0]}), 422
+    finally:
+        if message:
+            return message
 
     user = await Users.filter(email=email).first()
     if not user:
@@ -163,7 +193,7 @@ async def register():
             jsonify(
                 {
                     "status": "success",
-                    "message": "Thank you for sign-in!",
+                    "message": "Thank you for sign-in!.",
                 }
             ),
             200,
@@ -172,8 +202,8 @@ async def register():
         return (
             jsonify(
                 {
-                    "status": "error",
-                    "message": "User already exists",
+                    "status": "unsuccess",
+                    "message": "User already exists.",
                 }
             ),
             400,

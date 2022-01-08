@@ -10,7 +10,15 @@ import sys
 
 from quart_auth import AuthUser
 
-from quart import Quart, redirect, url_for, render_template
+from quart import (
+    Quart,
+    redirect,
+    url_for,
+    render_template,
+    Response,
+    jsonify,
+    make_response,
+)
 from quart_auth import (
     AuthManager,
     Unauthorized,
@@ -108,6 +116,32 @@ async def add_header(r):
     """
     r.headers["Cache-Control"] = "no-cache, max-age=0"
     return r
+
+
+@app.errorhandler(405)
+@app.errorhandler(403)
+@app.errorhandler(401)
+async def forbidden():
+    return Response(
+        jsonify(
+            {
+                "error": {
+                    "code": 403,
+                    "message": "The request is missing a valid API key.",
+                    "errors": [
+                        {
+                            "message": "The request is missing a valid API key.",
+                            "domain": "global",
+                            "reason": "forbidden",
+                        }
+                    ],
+                    "status": "PERMISSION_DENIED",
+                }
+            }
+        ),
+        status=403,  # HTTP Status 403 Forbidden
+        headers={"WWW-Authenticate": "Basic realm='Login Required'"},
+    )
 
 
 @app.before_websocket
