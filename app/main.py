@@ -49,6 +49,9 @@ def create_app():
         "HOST",
         "PORT",
         "DATABASE_URL",
+        "BCRYPT_LOG_ROUNDS",
+        "CACHE_TYPE",
+        "QUART_ENV",
     ]:
         app.config[key] = os.environ[key]
     register_extensions(app)
@@ -78,7 +81,7 @@ def register_blueprints(app):
     app.register_blueprint(auth)
 
 
-async def register_errorhandlers(app):
+def register_errorhandlers(app):
     """Register error handlers."""
 
     async def render_error(error):
@@ -120,7 +123,7 @@ async def add_header(r):
 
 @app.errorhandler(405)
 @app.errorhandler(403)
-@app.errorhandler(401)
+# @app.errorhandler(401)
 async def forbidden():
     return Response(
         jsonify(

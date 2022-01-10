@@ -3,8 +3,10 @@ import random
 import asyncio
 from functools import wraps
 import json
-import os
-import sys
+import secrets
+
+import requests
+import json
 
 # script_dir = os.path.dirname(__file__)
 # mymodule_dir = os.path.join(script_dir, "..", "user")
@@ -29,7 +31,6 @@ from email_validator import validate_email, caching_resolver, EmailNotValidError
 import pyotp
 from loguru import logger
 import humanize
-from passlib.context import CryptContext
 
 
 api = Blueprint("api", __name__, url_prefix="/api", static_folder="../static")
@@ -58,15 +59,7 @@ logger.info(printed)
 clients = set()
 requests_queue = asyncio.Queue()
 
-
-# create CryptContext object
-context = CryptContext(
-    schemes=["pbkdf2_sha256"],
-    default="pbkdf2_sha256",
-    pbkdf2_sha256__default_rounds=50000,
-)
-
-
+"""
 @api.app_errorhandler(403)
 def forbidden():
     return Response(
@@ -89,7 +82,7 @@ def forbidden():
         status=403,  # HTTP Status 403 Forbidden
         headers={"WWW-Authenticate": "Basic realm='Login Required'"},
     )
-
+"""
 
 from quart_auth import (
     AuthManager,
@@ -286,20 +279,28 @@ def collect_websocket(func):
         global clients
 
         try:
-            # logger.info(clients)
-            # asyncio.wait(20)
-
-            sec_id = None
-            for header in websocket.headers:
-                if "Sec-Websocket-Key" in header:
-                    sec_id = header[1]
-                    break
 
             remote_addr = None
             for header in websocket.headers:
                 if "X-Real-Ip" in header:
                     remote_addr = header[1]
                     break
+            else:
+                if not remote_addr:
+                    remote_addr = websocket.remote_addr
+
+            # URL to send the request to
+            request_url = "https://geolocation-db.com/jsonp/" + remote_addr
+            # Send request and decode the result
+            response = requests.get(request_url)
+            result = response.content.decode()
+            # Clean the returned string so it just contains the dictionary data for the IP address
+            result = result.split("(")[1].strip(")")
+            # Convert this data into a dictionary
+            result = json.loads(result)
+            print(result["country_name"])
+
+            # ToDo - check if secrets.token_urlsafe is unique
 
             websocket.alpha = {
                 "status": "registered",
@@ -307,10 +308,10 @@ def collect_websocket(func):
                 "connectedon": datetime.now(),
                 "updatedon": datetime.now(),
                 "remote_addr": remote_addr,
-                # "session_id": websocket.cookies.get("session"),
-                "sec_id": sec_id,
+                "sec_id": secrets.token_urlsafe(16),
                 # "extra": {item[0]: item[1] for item in websocket.headers._list},
                 "last_request": None,
+                "country": result["country_name"],
             }
             clients.add(websocket._get_current_object())
             logger.info(websocket.alpha)
@@ -319,7 +320,7 @@ def collect_websocket(func):
 
         except Exception as e:
             logger.info(f"Websocket {websocket.alpha['remote_addr']} disconnected")
-            clients.remove(websocket._get_current_object())
+            clients.discard(websocket._get_current_object())
 
         finally:
             logger.info(f"{len(clients)} clients connected")
@@ -352,17 +353,25 @@ async def get_websocket_from_session(id):
 
 
 async def send_message(websocket, message):
-    await websocket.send(json.dumps(message))
+    global clients
+    try:
+        await websocket.send(json.dumps(message))
+        websocket.alpha["last_request"] = message
+    except Exception as e:
+        clients.discard(websocket._get_current_object())
+        logger.error(f"{e}")
 
 
 async def send_message_to_all(message):
     global clients
-    for client in clients:
+    for i, client in enumerate(clients):
         try:
             await send_message(client, message)
             client.alpha["last_request"] = message
         except Exception as e:
-            clients.remove(client._get_current_object())
+            clients.discard(
+                client._get_current_object()
+            )  # change remove by discard to avoid error
             logger.error(f"{e}")
 
 
@@ -376,16 +385,26 @@ async def get_next_video():
     return message
 
 
+# Purge client if they don't reply back to PING from server
+
+
 @api.websocket("/ws")
-@login_required
+# @login_required
 @collect_websocket
 async def ws():
+    global clients
     while True:
         try:
 
             #  logger.debug(websocket.headers.get(["Origin"]))
             # logger.error(websocket._get_current_object())
             data = await websocket.receive_json()
+
+            if data.get("status") == "ping":
+                # websocket.alpha["status"] = "completed"
+                # websocket.alpha["total_played"] += 1
+                # websocket.alpha["updatedon"] = datetime.now() ToDo: do we need an updateon for PING/PONG?
+                await websocket.send(json.dumps({"request": "pong"}))
 
             if data.get("status") == "completed":
                 websocket.alpha["status"] = "completed"
@@ -409,8 +428,10 @@ async def ws():
                 websocket.alpha["updatedon"] = datetime.now()
 
                 global clients
-                clients.remove(websocket._get_current_object())
-                websocket.close()
+                clients.discard(websocket._get_current_object())
+                await websocket.close(
+                    code=1000, reason="Conection terminated from client"
+                )
 
             elif data.get("status") == "available":
                 websocket.alpha["status"] = "available"
@@ -419,8 +440,11 @@ async def ws():
                 await client_actions("play", websocket.alpha["sec_id"])
 
         except asyncio.CancelledError:
-            print(f"Client disconnected. Client data: {websocket.alpha}")
-            raise
+            logger.info(f"Client disconnected. Client data: {websocket.alpha}")
+            clients.discard(
+                websocket._get_current_object()
+            )  # change remove by discard to avoid error
+            # raise
 
 
 def build_requests_queue():
@@ -463,7 +487,7 @@ async def vm():
 
 @api.route("/client/<action>", methods=["GET"], defaults={"sec_id": "ALL"})
 @api.route("/client/<action>/<sec_id>", methods=["GET"])
-@login_required
+# @login_required
 async def client_actions(action, sec_id):
 
     if action == "reload":
@@ -493,7 +517,7 @@ async def client_actions(action, sec_id):
 
 
 @api.route("/dashboard", methods=["GET"])
-@login_required
+# @login_required
 async def dashboard():
     # return await render_template("dashboard.html", clients=clients)
     clients_list = [client.alpha for client in clients]
@@ -522,14 +546,13 @@ async def dashboard():
             client[
                 "commands"
             ] = f"""
-            <a href=https://meditationbooster.org/api/client/play/{client.get("sec_id")} onclick="return false;">||play||</a> 
-            <a href=https://meditationbooster.org/api/client/stop/{client.get("sec_id")} onclick="return false;">||stop||</a> 
-            <a href=https://meditationbooster.org/api/client/reload/{client.get("sec_id")} onclick="return false;">||reload||</a> 
-            <a href=https://meditationbooster.org/api/client/ping/{client.get("sec_id")} onclick="return false;">||ping||</a>
-            <a href=https://meditationbooster.org/api/client/kill/{client.get("sec_id")} onclick="return false;">||kill||</a>
+            <a name=play id={client.get("sec_id")}>||play||</a> 
+            <a name=stop id={client.get("sec_id")}>||stop||</a> 
+            <a name=reload id={client.get("sec_id")}>||reload||</a> 
+            <a name=pping id={client.get("sec_id")}>||ping||</a>
+            <a name=kill id={client.get("sec_id")}>||kill||</a>
             """
             c.append(client)
-
     except Exception as e:
         logger.error(f"Error: {e}")
         abort(500)
@@ -568,8 +591,67 @@ async def dashboard():
     </head>
     <body> {table}
     </body>
+    ||script||
     </html>
     """
+
+    script = """
+    <script type="text/javascript">
+        
+        function refresh() {    
+            setTimeout(function () {
+                location.reload()
+            }, 100);
+        }
+
+        $("[name=play]").each(function() {
+            $( this ).click(function(){
+                $.get("/api/client/play/" + this.id, function(data, status){
+                    alert("Status: " + status);
+                    refresh();
+                });
+            });
+        });
+
+        $("[name=stop]").each(function() {
+            $( this ).click(function(){
+                $.get("/api/client/stop/" + this.id, function(data, status){
+                    alert("Status: " + status);
+                    refresh();
+                });
+            });
+        });
+
+        $("[name=ping]").each(function() {
+            $( this ).click(function(){
+                $.get("/api/client/ping/" + this.id, function(data, status){
+                    alert("Status: " + status);
+                    refresh();
+                });
+            });
+        });
+
+        $("[name=reload]").each(function() {
+            $( this ).click(function(){
+                $.get("/api/client/reload/" + this.id, function(data, status){
+                    alert("Status: " + status);
+                    refresh();
+                });
+            });
+        });
+        
+        $("[name=kill]").each(function() {
+            $( this ).click(function(){
+                $.get("/api/client/kill/" + this.id, function(data, status){
+                    alert("Status: " + status);
+                    refresh();
+                });
+            });
+        });
+
+    </script>
+    """
+    html = html.replace("||script||", script)
 
     return html
 
@@ -606,15 +688,16 @@ async def html():
         </div>
         <script type="text/javascript">
         
-            var windowObjectReference = null
-            var timer1 = null
-            var timer2 = null
-
+            var windowObjectReference
+            var timer1
+            var timer2
+            var timer3
+            var timer4
+            var timer5
 
             function connect() {
 
-                //var url = 'ws://' + document.domain + ':' + location.port + '/api/ws'
-                var url = 'wss://meditationbooster.org/api/ws'
+                var url = '||wsocket||://' + document.domain + ':' + location.port + '/api/ws'
 
                 var ws = new WebSocket(url);
         
@@ -624,6 +707,12 @@ async def html():
                     $('#val').text('Connected to server, waiting for command...');
                     console.log('Socket connection established');
                     ws.send(JSON.stringify({'status': 'available'}));
+
+                    function ping() {
+                        ws.send(JSON.stringify({'status': 'ping'}));
+                        // console.log('PING sent to server');
+                    }
+                    timer5 = window.setInterval(ping, 5000);
                 };
                 
                 ws.onclose = function(event) {
@@ -633,36 +722,39 @@ async def html():
                             console.log('[close] Connection died');
                     }
                     ws = null
-                    setTimeout(connect, 5000)
+                    window.clearTimeout(window.timer1);
+                    window.clearTimeout(window.timer2);
+                    window.clearTimeout(window.timer3);
+                    window.clearTimeout(window.timer4);
+                    window.clearTimeout(window.timer5);
+                    window.setTimeout(connect, 5000)
                     if(windowObjectReference != null) {
                         windowObjectReference.close();
                     }
-                    clearTimeout(window.timer1);
-                    clearTimeout(window.timer2);
-                    clearTimeout(window.timer3);
-                    clearTimeout(window.timer4);
+
                     $('#val').text('Disconected from server. Retrying in 5 seconds...');
                 };
                 
                 ws.onerror = function(err) {
                     console.error('Socket encountered error: ', err.message, 'Closing socket');
-                    // $('#val').text('Error detected. Retrying in 5 seconds...');
-                    // ws.close();
+                    ws.close();
                 };
 
                 ws.onmessage = function (event) {
                     console.log('Received: ' + event.data);
                     var data = JSON.parse(event.data);
+                    //console.log(data)
                     var request = data.request;
                     
                     if (request == "reload") {
                         window.location.reload();
                     }
                     if (request == "stop") {
-                        clearTimeout(window.timer1);
-                        clearTimeout(window.timer2);
-                        clearTimeout(window.timer3);
-                        clearTimeout(window.timer4);
+                        window.clearTimeout(window.timer1);
+                        window.clearTimeout(window.timer2);
+                        window.clearTimeout(window.timer3);
+                        window.clearTimeout(window.timer4);
+                        window.clearTimeout(window.timer5);
                         if(windowObjectReference != null) {
                             windowObjectReference.close();
                         }
@@ -673,19 +765,23 @@ async def html():
                         console.log('ping');
                         ws.send(JSON.stringify({'status': 'pong'}));
                     }
+                    else if (request == "pong") {
+                        //console.log('PONG received');
+                    }
                     else if (request == "kill") {
-                        clearTimeout(window.timer1);
-                        clearTimeout(window.timer2);
-                        clearTimeout(window.timer3);
-                        clearTimeout(window.timer4);
+                        window.clearTimeout(window.timer1);
+                        window.clearTimeout(window.timer2);
+                        window.clearTimeout(window.timer3);
+                        window.clearTimeout(window.timer4);
+                        window.clearTimeout(window.timer5);
                         if(windowObjectReference != null) {
                             windowObjectReference.close();
                         }
                         window.open("", '_self', '').window.close();
-                        setTimeout (window.close, 5000);
+                        window.setTimeout (window.close, 5000);
                         window.close();
-                        setTimeout(() => {window.close();}, 2000);
-                        setTimeout(() => {window.close();}, 4000);
+                        window.setTimeout(() => {window.close();}, 2000);
+                        window.setTimeout(() => {window.close();}, 4000);
                         ws.send(JSON.stringify({'status': 'terminated'}));
                         // ws.close();
                         window.location.href="PageUrl".replace("PageUrl", "https://meditationbooster.org/");
@@ -698,7 +794,8 @@ async def html():
                         console.log(data.duration);
                         document.getElementById('yt').innerHTML = data.video_url;
                         openRequestedPopup(data.redirect_url + data.video_url, 'Client');
-                        timer1 = setTimeout(closeWin, data.duration * 1000);
+                        timer1 = window.setTimeout(closeWin, data.duration * 1000);
+                        // if (windowObjectReference.closed) -> ToDo: timer count to check if windows if opened
                         
                         var interval = 1, //How much to increase the progressbar per frame
                         updatesPerSecond = data.duration*1000/60, //Set the nr of updates per second (fps)
@@ -707,7 +804,7 @@ async def html():
                             progress.val(progress.val()+interval);
                             $('#val').text(progress.val());
                             if ( progress.val()+interval < progress.attr('max')){
-                            timer3 = setTimeout(animator, updatesPerSecond);
+                            timer3 = window.setTimeout(animator, updatesPerSecond);
                             } else { 
                                 $('#val').text('Done');
                                 progress.val(progress.attr('max'));
@@ -715,16 +812,16 @@ async def html():
                         },
                         reverse = function(){
                             progress.val(progress.val() - interval);
-                            $('#val').text(progress.val());
+                            $('#val').text("Watching, " + progress.val() + "% completed");
                             if ( progress.val() - interval > progress.attr('min')){
-                            timer4 = setTimeout(reverse, updatesPerSecond);
+                            timer4 = window.setTimeout(reverse, updatesPerSecond);
                             } else { 
                                 $('#val').text('Done');
                                 progress.val(progress.attr('min'));
                             }
                         }
                         progress.val(data.duration);
-                        timer2 = setTimeout(reverse, updatesPerSecond);
+                        timer2 = window.setTimeout(reverse, updatesPerSecond);
 
                         ws.send(JSON.stringify({'status': 'playing'}));
 
@@ -779,6 +876,12 @@ async def html():
     </html>
     """
 
+    from app.main import app
+
+    if app.config["QUART_ENV"] == "DEVELOPMENT":
+        html = html.replace("||wsocket||", "ws")
+    else:
+        html = html.replace("||wsocket||", "wss")
+
     response = await make_response(html)
-    response.set_cookie("X-Authorization", "R3YKZFKBVi2")
     return response

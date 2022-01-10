@@ -38,7 +38,11 @@ RUN pip install -U setuptools pip && \
     rm ./requirements.txt
 
 # ---- Copy Files/Build ----
-COPY ./app/*.py ./
+COPY ./app/ ./app/
+COPY ./.production.env ./.env
+#COPY ./app/*.py ./
+#COPY ./app/endpoints/*.py ./endpoints/
+#COPY ./app/user/*.py ./user/
 
 
 #HEALTHCHECK --interval=5m --timeout=3s \
@@ -64,4 +68,4 @@ ENV PATH=".venv/bin:$PATH"
 # Run the application:
 #CMD ["uvicorn", "--host", "0.0.0.0", "--port", "5000",  "main:app"]
 #CMD ["python3", "main.py"]
-CMD ["hypercorn", "--bind", "0.0.0.0:5000", "main:app", "-w", "1", "--worker-class", "uvloop"]
+CMD ["hypercorn", "--bind", "0.0.0.0:5000", "app.main:app", "-w", "1", "--worker-class", "uvloop"]
