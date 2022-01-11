@@ -199,7 +199,7 @@ async def add_friend():
 
 
 @api.route("/ref", methods=["GET"])
-@login_required_ext(only_admin=False)
+# @login_required_ext(only_admin=False)
 async def ref():
     url = request.args.get("url")
     logger.info(url)
@@ -278,51 +278,51 @@ def collect_websocket(func):
     async def wrapper(*args, **kwargs):
         global clients
 
+        remote_addr = None
+        for header in websocket.headers:
+            if "X-Real-Ip" in header:
+                remote_addr = header[1]
+                break
+        else:
+            if not remote_addr:
+                remote_addr = websocket.remote_addr
+
+        # URL to send the request to
+        request_url = "https://geolocation-db.com/jsonp/" + remote_addr
+        # Send request and decode the result
+        response = requests.get(request_url)
+        result = response.content.decode()
+        # Clean the returned string so it just contains the dictionary data for the IP address
+        result = result.split("(")[1].strip(")")
+        # Convert this data into a dictionary
+        result = json.loads(result)
+        print(result["country_name"])
+
+        # ToDo - check if secrets.token_urlsafe is unique
+
+        websocket.alpha = {
+            "status": "registered",
+            "total_played": 0,
+            "connectedon": datetime.now(),
+            "updatedon": datetime.now(),
+            "remote_addr": remote_addr,
+            "sec_id": secrets.token_urlsafe(16),
+            # "extra": {item[0]: item[1] for item in websocket.headers._list},
+            "last_request": None,
+            "country": result["country_name"],
+        }
+        clients.add(websocket._get_current_object())
+        logger.info(websocket.alpha)
+
         try:
-
-            remote_addr = None
-            for header in websocket.headers:
-                if "X-Real-Ip" in header:
-                    remote_addr = header[1]
-                    break
-            else:
-                if not remote_addr:
-                    remote_addr = websocket.remote_addr
-
-            # URL to send the request to
-            request_url = "https://geolocation-db.com/jsonp/" + remote_addr
-            # Send request and decode the result
-            response = requests.get(request_url)
-            result = response.content.decode()
-            # Clean the returned string so it just contains the dictionary data for the IP address
-            result = result.split("(")[1].strip(")")
-            # Convert this data into a dictionary
-            result = json.loads(result)
-            print(result["country_name"])
-
-            # ToDo - check if secrets.token_urlsafe is unique
-
-            websocket.alpha = {
-                "status": "registered",
-                "total_played": 0,
-                "connectedon": datetime.now(),
-                "updatedon": datetime.now(),
-                "remote_addr": remote_addr,
-                "sec_id": secrets.token_urlsafe(16),
-                # "extra": {item[0]: item[1] for item in websocket.headers._list},
-                "last_request": None,
-                "country": result["country_name"],
-            }
-            clients.add(websocket._get_current_object())
-            logger.info(websocket.alpha)
-
             return await func(*args, **kwargs)
 
         except Exception as e:
-            logger.info(f"Websocket {websocket.alpha['remote_addr']} disconnected")
-            clients.discard(websocket._get_current_object())
+            logger.error(f"In collect_websocket. Error: {e}")
 
         finally:
+
+            clients.discard(websocket._get_current_object())
             logger.info(f"{len(clients)} clients connected")
 
     return wrapper
@@ -357,9 +357,8 @@ async def send_message(websocket, message):
     try:
         await websocket.send(json.dumps(message))
         websocket.alpha["last_request"] = message
-    except Exception as e:
-        clients.discard(websocket._get_current_object())
-        logger.error(f"{e}")
+    finally:
+        pass
 
 
 async def send_message_to_all(message):
@@ -368,11 +367,8 @@ async def send_message_to_all(message):
         try:
             await send_message(client, message)
             client.alpha["last_request"] = message
-        except Exception as e:
-            clients.discard(
-                client._get_current_object()
-            )  # change remove by discard to avoid error
-            logger.error(f"{e}")
+        finally:
+            pass
 
 
 # playing next video
@@ -395,9 +391,7 @@ async def ws():
     global clients
     while True:
         try:
-
-            #  logger.debug(websocket.headers.get(["Origin"]))
-            # logger.error(websocket._get_current_object())
+            # message = await websocket.recv()
             data = await websocket.receive_json()
 
             if data.get("status") == "ping":
@@ -427,11 +421,11 @@ async def ws():
                 websocket.alpha["status"] = "terminated"
                 websocket.alpha["updatedon"] = datetime.now()
 
-                global clients
-                clients.discard(websocket._get_current_object())
-                await websocket.close(
-                    code=1000, reason="Conection terminated from client"
-                )
+                # global clients
+                # clients.discard(websocket._get_current_object())
+                # await websocket.close(
+                #    code=1000, reason="Conection terminated from client"
+                # )
 
             elif data.get("status") == "available":
                 websocket.alpha["status"] = "available"
@@ -439,12 +433,8 @@ async def ws():
 
                 await client_actions("play", websocket.alpha["sec_id"])
 
-        except asyncio.CancelledError:
-            logger.info(f"Client disconnected. Client data: {websocket.alpha}")
-            clients.discard(
-                websocket._get_current_object()
-            )  # change remove by discard to avoid error
-            # raise
+        except Exception as e:
+            logger.error(f"Something went worng. Error: {e}")
 
 
 def build_requests_queue():
