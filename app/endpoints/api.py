@@ -545,7 +545,7 @@ async def dashboard():
             <a name=play id={client.get("sec_id")}>||play||</a> 
             <a name=stop id={client.get("sec_id")}>||stop||</a> 
             <a name=reload id={client.get("sec_id")}>||reload||</a> 
-            <a name=pping id={client.get("sec_id")}>||ping||</a>
+            <a name=ping id={client.get("sec_id")}>||ping||</a>
             <a name=kill id={client.get("sec_id")}>||kill||</a>
             """
             c.append(client)
