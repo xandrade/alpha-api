@@ -362,7 +362,8 @@ async def send_message(websocket, message):
 
 async def send_message_to_all(message):
     global clients
-    for i, client in enumerate(clients):
+    _clients = clients.copy()
+    for i, client in enumerate(_clients):
         await send_message(client, message)
         client.alpha["last_request"] = message
 
