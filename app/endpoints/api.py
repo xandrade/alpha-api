@@ -357,6 +357,12 @@ async def send_message(websocket, message):
     try:
         await websocket.send(json.dumps(message))
         websocket.alpha["last_request"] = message
+    except Exception as e:
+        logger.error(f"In send_message. Error: {e}")
+        if websocket in clients:
+            clients.discard(websocket)
+            logger.info((f"{websocket} disconnected"))
+            logger.info(f"{len(clients)} clients connected")
     finally:
         pass
 
