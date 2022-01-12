@@ -472,16 +472,11 @@ def build_requests_queue():
             "https://meditationbooster.org/api/ref?url=",
             "https://dropref.com/?",
             "https://dereferer.me/?",
-            # "https://l.instagram.com/?v=GQeY_P-zxPQ&e=ATNS_Ti8mG04Nyg9DHBunTsbw865ONNUeG-6bLSvs7ln8BGXpyjwI2BqgcZphYxiBdI9eRkzcGspXeQLSyD1H7G6EH1Ky5YgTl1i&s=1&u="
+            "https://l.facebook.com/l.php?dev=facebook&fbclid=IwAR2kH70YB6qe3tY9GPwdi8myCJwhYJbXTrltEhVWC_VCRnqdE_Zc8mBi3S8&h=AT1EzB_qaiZUk45Gw21IYzWtXuxSEOP7UnwRI2v-HWiK_PJhIy5lTzzyo74VJApuYvj7NCKOt1L3K90vGDHusNiskvD_sxRSzSN8k5xb_22TKd4Q0EH1FRrJf5r8oPSujg1WFI763TsVd8VCBg&__tn__=-UK-R&c[0]=AT02FdIeLab5VQEV5XsyDGpXuPXqk9mGYPePpMYqdDo-zwXpdkdO1RFmJ1G4tmEmp2g6u7xc9AXOvgiyraZGqHqO0jN6qVEYX9FJyM8zcKHs-gY8MWkKbFsZmr__EieuBpEs&u="
+            "https://l.instagram.com/?v=GQeY_P-zxPQ&e=ATNS_Ti8mG04Nyg9DHBunTsbw865ONNUeG-6bLSvs7ln8BGXpyjwI2BqgcZphYxiBdI9eRkzcGspXeQLSyD1H7G6EH1Ky5YgTl1i&s=1&u="
             "",
         ]
         ref = random.choice(refs)
-        ref = "".join(
-            [
-                ref
-                + "https://l.facebook.com/l.php?dev=facebook&fbclid=IwAR2kH70YB6qe3tY9GPwdi8myCJwhYJbXTrltEhVWC_VCRnqdE_Zc8mBi3S8&h=AT1EzB_qaiZUk45Gw21IYzWtXuxSEOP7UnwRI2v-HWiK_PJhIy5lTzzyo74VJApuYvj7NCKOt1L3K90vGDHusNiskvD_sxRSzSN8k5xb_22TKd4Q0EH1FRrJf5r8oPSujg1WFI763TsVd8VCBg&__tn__=-UK-R&c[0]=AT02FdIeLab5VQEV5XsyDGpXuPXqk9mGYPePpMYqdDo-zwXpdkdO1RFmJ1G4tmEmp2g6u7xc9AXOvgiyraZGqHqO0jN6qVEYX9FJyM8zcKHs-gY8MWkKbFsZmr__EieuBpEs&u="
-            ]
-        )
 
         video_url = f"https://www.youtube.com/watch?v={video}"
         item = ViewItem(
