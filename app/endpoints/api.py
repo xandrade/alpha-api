@@ -218,16 +218,16 @@ def get_videos():
 
     videos = [
         # "saJUAhmjGoA", # SOS Life
-        "L1mPYhHs7Io&list=UUSHVrCpsFXdnxC34qUj7nOp5w",  # SOS Life
-        "rL7yMKkHAdI",
-        "KOysJXrPTtw",
-        "FaIvDpyBNDY",
-        "-yHJZqoKyrI",
-        "_ifWAxhJjoA",
-        "-FJq8X9YXr4",
-        "IUOxW9a7Ds4",
-        "01GTELF_PII",
-        "GQeY_P-zxPQ",
+        # "L1mPYhHs7Io&list=UUSHVrCpsFXdnxC34qUj7nOp5w",  # SOS Life
+        "rL7yMKkHAdI",  # 13-Jan-2022 203 views
+        # "KOysJXrPTtw",
+        # "FaIvDpyBNDY",
+        # "-yHJZqoKyrI",
+        # "_ifWAxhJjoA",
+        # "-FJq8X9YXr4",
+        # "IUOxW9a7Ds4",
+        # "01GTELF_PII",
+        # "GQeY_P-zxPQ",
     ]
     return videos
 
@@ -469,12 +469,12 @@ def build_requests_queue():
         html = f"""<iframe style='position: absolute; height: 100%; width: 100%; border: none' src='https://www.youtube.com/embed/{video}?&amp;autoplay=1&amp;controls=0&amp;mute=1&amp;loop=1&amp;playlist={video}' title='YouTube video player' frameborder='0' allow='autoplay; encrypted-media; picture-in-picture' allowfullscreen='' >"""
 
         refs = [
-            "https://meditationbooster.org/api/ref?url=",
-            "https://dropref.com/?",
-            "https://dereferer.me/?",
-            "https://l.facebook.com/l.php?dev=facebook&fbclid=IwAR2kH70YB6qe3tY9GPwdi8myCJwhYJbXTrltEhVWC_VCRnqdE_Zc8mBi3S8&h=AT1EzB_qaiZUk45Gw21IYzWtXuxSEOP7UnwRI2v-HWiK_PJhIy5lTzzyo74VJApuYvj7NCKOt1L3K90vGDHusNiskvD_sxRSzSN8k5xb_22TKd4Q0EH1FRrJf5r8oPSujg1WFI763TsVd8VCBg&__tn__=-UK-R&c[0]=AT02FdIeLab5VQEV5XsyDGpXuPXqk9mGYPePpMYqdDo-zwXpdkdO1RFmJ1G4tmEmp2g6u7xc9AXOvgiyraZGqHqO0jN6qVEYX9FJyM8zcKHs-gY8MWkKbFsZmr__EieuBpEs&u="
+            # "https://meditationbooster.org/api/ref?url=",
+            # "https://dropref.com/?",
+            # "https://dereferer.me/?",
+            # "https://l.facebook.com/l.php?dev=facebook&fbclid=IwAR2kH70YB6qe3tY9GPwdi8myCJwhYJbXTrltEhVWC_VCRnqdE_Zc8mBi3S8&h=AT1EzB_qaiZUk45Gw21IYzWtXuxSEOP7UnwRI2v-HWiK_PJhIy5lTzzyo74VJApuYvj7NCKOt1L3K90vGDHusNiskvD_sxRSzSN8k5xb_22TKd4Q0EH1FRrJf5r8oPSujg1WFI763TsVd8VCBg&__tn__=-UK-R&c[0]=AT02FdIeLab5VQEV5XsyDGpXuPXqk9mGYPePpMYqdDo-zwXpdkdO1RFmJ1G4tmEmp2g6u7xc9AXOvgiyraZGqHqO0jN6qVEYX9FJyM8zcKHs-gY8MWkKbFsZmr__EieuBpEs&u="
             "https://l.instagram.com/?v=GQeY_P-zxPQ&e=ATNS_Ti8mG04Nyg9DHBunTsbw865ONNUeG-6bLSvs7ln8BGXpyjwI2BqgcZphYxiBdI9eRkzcGspXeQLSyD1H7G6EH1Ky5YgTl1i&s=1&u="
-            "",
+            # "",
         ]
         ref = random.choice(refs)
 
