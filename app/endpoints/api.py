@@ -191,7 +191,7 @@ def get_videos():
         # "saJUAhmjGoA", # SOS Life
         # "L1mPYhHs7Io&list=UUSHVrCpsFXdnxC34qUj7nOp5w",  # SOS Life
         #"rL7yMKkHAdI",  # 13-Jan-2022 203 views -> 13-Jan-2022 396 views
-        "DelrwCeXkvg", # Pavel 3705 14-Jan-2022 3:41pm
+        "DelrwCeXkvg",  # Pavel 3705 14-Jan-2022 3:41pm
         # "KOysJXrPTtw",
         # "FaIvDpyBNDY",
         # "-yHJZqoKyrI",
@@ -209,8 +209,8 @@ def get_videos():
 async def gallery(video_pairs):
 
     html = ""
-    return html, 200
     
+    '''
     if video_pairs < 1:
         video_pairs = 1
 
@@ -237,7 +237,8 @@ async def gallery(video_pairs):
         html += _html
 
     return html, 200
-
+    '''
+    return html, 200
 
 def uniqueid():
     seed = random.getrandbits(32)
