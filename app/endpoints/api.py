@@ -1,4 +1,29 @@
-.console.integratedTerminal.description%","%node.launch.console.externalTerminal.description%"],"type":"string"},"customDescriptionGenerator":{"description":"%customDescriptionGenerator.description%","type":"string"},"customPropertiesGenerator":{"deprecated":true,"description":"%customPropertiesGenerator.description%","type":"string"},"cwd":{"default":"${workspaceFolder}","description":"%node.launch.cwd.description%","type":"string"},"enableContentValidation":{"default":true,"description":"%enableContentValidation.description%","type":"boolean"},"env":{"additionalProperties":{"type":["r, EmailNotValidError
+from datetime import datetime
+import random
+import asyncio
+from functools import wraps
+import json
+import secrets
+import requests
+import json
+
+# script_dir = os.path.dirname(__file__)
+# mymodule_dir = os.path.join(script_dir, "..", "user")
+# sys.path.append(mymodule_dir)
+from app.user.models import Friends, Users, Videos, WatchedVideos, RefUrls
+from app.data import ViewItem
+from quart import (
+    Blueprint,
+    jsonify,
+    request,
+    Response,
+    websocket,
+    abort,
+    session,
+    make_response,
+    current_app,
+)
+from email_validator import validate_email, caching_resolver, EmailNotValidError
 import pyotp
 from loguru import logger
 import humanize
@@ -190,7 +215,7 @@ def get_videos():
     videos = [
         # "saJUAhmjGoA", # SOS Life
         # "L1mPYhHs7Io&list=UUSHVrCpsFXdnxC34qUj7nOp5w",  # SOS Life
-        #"rL7yMKkHAdI",  # 13-Jan-2022 203 views -> 13-Jan-2022 396 views
+        # "rL7yMKkHAdI",  # 13-Jan-2022 203 views -> 13-Jan-2022 396 views
         "DelrwCeXkvg",  # Pavel 3705 14-Jan-2022 3:41pm
         # "KOysJXrPTtw",
         # "FaIvDpyBNDY",
@@ -209,7 +234,7 @@ def get_videos():
 async def gallery(video_pairs):
 
     html = ""
-    
+
     '''
     if video_pairs < 1:
         video_pairs = 1
@@ -239,6 +264,7 @@ async def gallery(video_pairs):
     return html, 200
     '''
     return html, 200
+
 
 def uniqueid():
     seed = random.getrandbits(32)
