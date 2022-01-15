@@ -215,16 +215,16 @@ def get_videos():
     videos = [
         # "saJUAhmjGoA", # SOS Life
         # "L1mPYhHs7Io&list=UUSHVrCpsFXdnxC34qUj7nOp5w",  # SOS Life
-        # "rL7yMKkHAdI",  # 13-Jan-2022 203 views -> 13-Jan-2022 396 views
-        "DelrwCeXkvg",  # Pavel 3705 14-Jan-2022 3:41pm
-        # "KOysJXrPTtw",
-        # "FaIvDpyBNDY",
-        # "-yHJZqoKyrI",
-        # "_ifWAxhJjoA",
-        # "-FJq8X9YXr4",
-        # "IUOxW9a7Ds4",
-        # "01GTELF_PII",
-        # "GQeY_P-zxPQ",
+        "rL7yMKkHAdI",  # 13-Jan-2022 203 views -> 13-Jan-2022 396 views
+        # "DelrwCeXkvg",  # Pavel 3705 14-Jan-2022 3:41pm -> 3,803 views 15-Jan-2022 2:33pm
+        "KOysJXrPTtw",
+        "FaIvDpyBNDY",
+        "-yHJZqoKyrI",
+        "_ifWAxhJjoA",
+        "-FJq8X9YXr4",
+        "IUOxW9a7Ds4",
+        "01GTELF_PII",
+        "GQeY_P-zxPQ",
     ]
     return videos
 
@@ -235,7 +235,6 @@ async def gallery(video_pairs):
 
     html = ""
 
-    '''
     if video_pairs < 1:
         video_pairs = 1
 
@@ -261,8 +260,6 @@ async def gallery(video_pairs):
         """
         html += _html
 
-    return html, 200
-    '''
     return html, 200
 
 
@@ -690,9 +687,13 @@ async def html():
     </head>
     <body>
         <div class="container">
-            <progress max="100" min="0" value="100" width="100%";></progress>
-            <table id="info-table" class="table table-bordered table-hover">
+            <table id="info-table" class="table table-bordered table-hover" style="margin-top: 16px;">
                 <tbody>
+                <tr>
+                    <td colspan="2">
+                        <progress max="100" min="0" value="100" style="width: -webkit-fill-available;"></progress>
+                    </td>
+                </tr>
                     <tr>
                         <th>Status:</th>
                         <th><div id="val"></div></th>
@@ -700,6 +701,12 @@ async def html():
                     <tr>
                         <th>Watching:</th>
                         <th><div id='yt'></div></th>
+                    </tr>
+                    <tr>
+                        <th>Playing:</th>
+                        <th>
+                            <div id="thumbnail" style="display: flex; gap: 20px;"><img src="https://img.youtube.com/vi/ffC08UqcFw0/maxresdefault.jpg" style="width: 200px;" alt="https://www.youtube.com/watch?v=DelrwCeXkvg">
+                            <div id_="title">Beautiful Relaxing Music, Insomnia Relief​, Stress Relief Music, Meditation, Morning Music, Zazen</div></div>
                     </tr>
                 </tbody>
             </table>
