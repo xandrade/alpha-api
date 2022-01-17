@@ -12,6 +12,7 @@ import json
 # sys.path.append(mymodule_dir)
 from app.user.models import Friends, Users, Videos, WatchedVideos, RefUrls
 from app.data import ViewItem
+from app.message import get_random_message
 from app.youtube.tools import get_video_title
 from quart import (
     Blueprint,
@@ -773,7 +774,7 @@ async def html():
                 </tr>
                     <tr>
                         <th>Status:</th>
-                        <th><div id="val"></div></th>
+                        <th><div id="val">||message||</div></th>
                     </tr>
                     <tr>
                         <th>Watching:</th>
@@ -986,6 +987,8 @@ async def html():
     </body>
     </html>
     """
+
+    html = html.replace("||message||", get_random_message())
 
     from app.main import app
 
