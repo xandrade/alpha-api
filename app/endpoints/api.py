@@ -12,6 +12,7 @@ import json
 # sys.path.append(mymodule_dir)
 from app.user.models import Friends, Users, Videos, WatchedVideos, RefUrls
 from app.data import ViewItem
+from app.youtube.tool import get_video_title
 from quart import (
     Blueprint,
     jsonify,
@@ -406,57 +407,90 @@ async def get_next_video():
 # Purge client if they don't reply back to PING from server
 
 
+connected_websockets = set()
+
+
+def collect_websocket2(func):
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        global connected_websockets
+        queue = asyncio.Queue()
+        connected_websockets.add(queue)
+        try:
+            return await func(queue, *args, **kwargs)
+        finally:
+            connected_websockets.remove(queue)
+
+    return wrapper
+
+
+@api.websocket("/dashboard")
+@collect_websocket2
+async def ws2(queue):
+    while True:
+        data = await queue.get()
+        await websocket.send(json.dumps(data))
+
+
+async def broadcast(message):
+    for queue in connected_websockets:
+        await queue.put(message)
+
+
+@api.route("/dashboard/<message>")
+async def test2(message):
+    await broadcast(message)
+    return "message sent"
+
+
 @api.websocket("/ws")
 # @login_required
 @collect_websocket
 async def ws():
     global clients
     while True:
-        try:
-            # message = await websocket.recv()
-            data = await websocket.receive_json()
 
-            if data.get("status") == "ping":
-                # websocket.alpha["status"] = "completed"
-                # websocket.alpha["total_played"] += 1
-                # websocket.alpha["updatedon"] = datetime.now() ToDo: do we need an updateon for PING/PONG?
-                await websocket.send(json.dumps({"request": "pong"}))
+        # message = await websocket.recv()
+        data = await websocket.receive_json()
 
-            if data.get("status") == "completed":
-                websocket.alpha["status"] = "completed"
-                websocket.alpha["total_played"] += 1
-                websocket.alpha["updatedon"] = datetime.now()
+        if data.get("status") == "ping":
+            # websocket.alpha["status"] = "completed"
+            # websocket.alpha["total_played"] += 1
+            # websocket.alpha["updatedon"] = datetime.now() ToDo: do we need an updateon for PING/PONG?
+            await websocket.send(json.dumps({"request": "pong"}))
 
-            if data.get("status") == "stopped":
-                websocket.alpha["status"] = "stopped"
-                websocket.alpha["updatedon"] = datetime.now()
+        if data.get("status") == "completed":
+            websocket.alpha["status"] = "completed"
+            websocket.alpha["total_played"] += 1
+            websocket.alpha["updatedon"] = datetime.now()
 
-            elif data.get("status") == "pong":
-                # websocket.close()
-                websocket.alpha["updatedon"] = datetime.now()
+        if data.get("status") == "stopped":
+            websocket.alpha["status"] = "stopped"
+            websocket.alpha["updatedon"] = datetime.now()
 
-            elif data.get("status") == "playing":
-                websocket.alpha["status"] = "playing"
-                websocket.alpha["updatedon"] = datetime.now()
+        elif data.get("status") == "pong":
+            # websocket.close()
+            websocket.alpha["updatedon"] = datetime.now()
 
-            elif data.get("status") == "terminated":
-                websocket.alpha["status"] = "terminated"
-                websocket.alpha["updatedon"] = datetime.now()
+        elif data.get("status") == "playing":
+            websocket.alpha["status"] = "playing"
+            websocket.alpha["updatedon"] = datetime.now()
 
-                # global clients
-                # clients.discard(websocket._get_current_object())
-                # await websocket.close(
-                #    code=1000, reason="Conection terminated from client"
-                # )
+        elif data.get("status") == "terminated":
+            websocket.alpha["status"] = "terminated"
+            websocket.alpha["updatedon"] = datetime.now()
 
-            elif data.get("status") == "available":
-                websocket.alpha["status"] = "available"
-                websocket.alpha["updatedon"] = datetime.now()
+            # global clients
+            # clients.discard(websocket._get_current_object())
+            # await websocket.close(
+            #    code=1000, reason="Conection terminated from client"
+            # )
 
-                await client_actions("play", websocket.alpha["sec_id"])
+        elif data.get("status") == "available":
+            websocket.alpha["status"] = "available"
+            websocket.alpha["updatedon"] = datetime.now()
 
-        except Exception as e:
-            logger.error(f"Something went worng. Error: {e}")
+            await client_actions("play", websocket.alpha["sec_id"])
 
 
 def build_requests_queue():
@@ -487,11 +521,6 @@ def build_requests_queue():
 build_requests_queue()
 
 
-async def broadcast(message):
-    for queue in clients:
-        await queue.put(message)
-
-
 @api.route("/vm", methods=["GET"])
 async def vm():
     # return await render_template("dashboard.html", clients=clients)
@@ -514,6 +543,7 @@ async def client_actions(action, sec_id):
         message = {"request": "stop"}
     elif action == "play":
         message = await get_next_video()
+        message["title"] = get_video_title(message["video_url"])
     else:
         logger.error(f"Invalid action: {action}")
         abort(400)
@@ -664,8 +694,53 @@ async def dashboard():
         });
 
     </script>
+    <script type="text/javascript">
+        
+            var timer1
+
+            function connect() {
+
+                var url = '||wsocket||://' + document.domain + ':' + location.port + '/api/dashboard'
+                var ws = new WebSocket(url);
+                ws.debug = true;
+
+                ws.onopen = function() {
+                    //$('#val').text('Connected to server, waiting for command...');
+                    console.log('Socket connection established');
+                    //ws.send(JSON.stringify({'status': 'available'}));
+
+                };
+                
+                ws.onclose = function(event) {
+                    //$('#val').text('Disconected from server. Retrying in 5 seconds...');
+                    console.log('Socket connection closed, retrying in 5 seconds...');
+                    window.setTimeout(connect, 5000)
+                };
+                
+                ws.onerror = function(err) {
+                    console.error('Socket encountered error: ', err.message, 'Closing socket');
+                    ws.close();
+                };
+
+                ws.onmessage = function (event) {
+                    console.log('Received: ' + event.data);
+                    var data = JSON.parse(event.data);
+                    console.log(data)
+                };
+            };
+
+            connect();
+
+        </script>
     """
     html = html.replace("||script||", script)
+
+    from app.main import app
+
+    if app.config["QUART_ENV"] == "DEVELOPMENT":
+        html = html.replace("||wsocket||", "ws")
+    else:
+        html = html.replace("||wsocket||", "wss")
 
     return html
 
