@@ -76,7 +76,9 @@ class Videos(Model):
     user_id = fields.ForeignKeyField(
         "models.Users", related_name="videos", on_delete=fields.CASCADE
     )
+    video_id = fields.TextField()
     video_url = fields.TextField()
+    video_title = fields.TextField()
     duration = fields.IntField()
     archived = fields.BooleanField(default=False)
     views_enabled = fields.BooleanField(default=True)

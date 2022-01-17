@@ -12,7 +12,7 @@ import json
 # sys.path.append(mymodule_dir)
 from app.user.models import Friends, Users, Videos, WatchedVideos, RefUrls
 from app.data import ViewItem
-from app.youtube.tool import get_video_title
+from app.youtube.tools import get_video_title
 from quart import (
     Blueprint,
     jsonify,
@@ -401,6 +401,7 @@ async def get_next_video():
     message = await requests_queue.get()
     message = message.to_dict()
     message["request"] = "play"
+    message["video_title"] = get_video_title(message["video_id"])
     return message
 
 
@@ -457,6 +458,7 @@ async def ws():
             # websocket.alpha["status"] = "completed"
             # websocket.alpha["total_played"] += 1
             # websocket.alpha["updatedon"] = datetime.now() ToDo: do we need an updateon for PING/PONG?
+            logger.debug(data.get("windowClosed"))
             await websocket.send(json.dumps({"request": "pong"}))
 
         if data.get("status") == "completed":
@@ -511,6 +513,7 @@ def build_requests_queue():
 
         video_url = f"https://www.youtube.com/watch?v={video}"
         item = ViewItem(
+            video_id=video,
             video_url=video_url,
             redirect_url=ref,
             duration=random.choice(range(60, 60 * 5)),
@@ -543,7 +546,6 @@ async def client_actions(action, sec_id):
         message = {"request": "stop"}
     elif action == "play":
         message = await get_next_video()
-        message["title"] = get_video_title(message["video_url"])
     else:
         logger.error(f"Invalid action: {action}")
         abort(400)
@@ -780,8 +782,10 @@ async def html():
                     <tr>
                         <th>Playing:</th>
                         <th>
-                            <div id="thumbnail" style="display: flex; gap: 20px;"><img src="https://img.youtube.com/vi/ffC08UqcFw0/maxresdefault.jpg" style="width: 200px;" alt="https://www.youtube.com/watch?v=DelrwCeXkvg">
-                            <div id_="title">Beautiful Relaxing Music, Insomnia Relief​, Stress Relief Music, Meditation, Morning Music, Zazen</div></div>
+                            <div style="display: flex; gap: 20px;">
+                                <div id="thumbnail"><img src="https://img.youtube.com/vi//maxresdefault.jpg" style="width: 200px;"></div>
+                                <div id="title"></div></div>
+                            </div>
                     </tr>
                 </tbody>
             </table>
@@ -809,7 +813,7 @@ async def html():
                     ws.send(JSON.stringify({'status': 'available'}));
 
                     function ping() {
-                        ws.send(JSON.stringify({'status': 'ping'}));
+                        ws.send(JSON.stringify({'status': 'ping', 'windowClosed': windowObjectReference.closed}));
                         // console.log('PING sent to server');
                     }
                     timer5 = window.setInterval(ping, 5000);
@@ -831,7 +835,8 @@ async def html():
                     if(windowObjectReference != null) {
                         windowObjectReference.close();
                     }
-
+                    $('#title').text("");
+                    $("#thumbnail img").attr("src", "https://img.youtube.com/vi//maxresdefault.jpg") 
                     $('#val').text('Disconected from server. Retrying in 5 seconds...');
                 };
                 
@@ -859,6 +864,8 @@ async def html():
                             windowObjectReference.close();
                         }
                         $('#val').text('Stopped from server');
+                        $('#title').text("");
+                        $("#thumbnail img").attr("src", "https://img.youtube.com/vi//maxresdefault.jpg") 
                         ws.send(JSON.stringify({'status': 'stopped'}));
                     }
                     else if (request == "ping") {
@@ -893,6 +900,10 @@ async def html():
                         console.log(data.video_url);
                         console.log(data.duration);
                         document.getElementById('yt').innerHTML = data.video_url;
+                        
+                        $('#title').text(data.video_title);
+                        $("#thumbnail img").attr("src", "https://img.youtube.com/vi/" + data.video_id + "/maxresdefault.jpg") 
+
                         openRequestedPopup(data.redirect_url + data.video_url, 'Client');
                         timer1 = window.setTimeout(closeWin, data.duration * 1000);
                         // if (windowObjectReference.closed) -> ToDo: timer count to check if windows if opened
@@ -906,7 +917,7 @@ async def html():
                             if ( progress.val()+interval < progress.attr('max')){
                             timer3 = window.setTimeout(animator, updatesPerSecond);
                             } else { 
-                                $('#val').text('Done');
+                                $('#val').text('Almost done');
                                 progress.val(progress.attr('max'));
                             }
                         },
@@ -914,7 +925,7 @@ async def html():
                             progress.val(progress.val() - interval);
                             $('#val').text("Watching, " + progress.val() + "% completed");
                             if ( progress.val() - interval > progress.attr('min')){
-                            timer4 = window.setTimeout(reverse, updatesPerSecond);
+                                timer4 = window.setTimeout(reverse, updatesPerSecond);
                             } else { 
                                 $('#val').text('Done');
                                 progress.val(progress.attr('min'));

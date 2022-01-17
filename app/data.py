@@ -7,7 +7,9 @@ import json
 class ViewItem:
     """Class for keeping track of view."""
 
+    video_id: str = ""
     video_url: str = ""
+    video_title: str = ""
     redirect_url: str = ""
     duration: int = 0
 
