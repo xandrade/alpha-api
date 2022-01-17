@@ -14,6 +14,7 @@ from app.user.models import Friends, Users, Videos, WatchedVideos, RefUrls
 from app.data import ViewItem
 from app.message import get_random_message
 from app.youtube.tools import get_video_title
+from quart.utils import run_sync
 from quart import (
     Blueprint,
     jsonify,
@@ -402,12 +403,11 @@ async def get_next_video():
     message = await requests_queue.get()
     message = message.to_dict()
     message["request"] = "play"
-    message["video_title"] = get_video_title(message["video_id"])
+    message["video_title"] = await run_sync(get_video_title)(message["video_id"])
     return message
 
 
 # Purge client if they don't reply back to PING from server
-
 
 connected_websockets = set()
 
