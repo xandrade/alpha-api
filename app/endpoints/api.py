@@ -459,7 +459,7 @@ async def ws():
             # websocket.alpha["status"] = "completed"
             # websocket.alpha["total_played"] += 1
             # websocket.alpha["updatedon"] = datetime.now() ToDo: do we need an updateon for PING/PONG?
-            logger.debug(data.get("windowClosed"))
+            # logger.debug(data.get("windowClosed"))
             await websocket.send(json.dumps({"request": "pong"}))
 
         if data.get("status") == "completed":
@@ -754,8 +754,7 @@ async def html():
     # session['X-Authorization'] = 'R3YKZFKBVi2'
     logger.debug(request.full_path)
 
-    html = """
-    <!doctype html>
+    html = """<!doctype html>
     <html>
     <head>
         <title>Alpha - Client</title>
@@ -928,7 +927,7 @@ async def html():
                             if ( progress.val() - interval > progress.attr('min')){
                                 timer4 = window.setTimeout(reverse, updatesPerSecond);
                             } else { 
-                                $('#val').text('Done');
+                                $('#val').text('Almost done');
                                 progress.val(progress.attr('min'));
                             }
                         }
