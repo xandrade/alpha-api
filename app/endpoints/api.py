@@ -303,6 +303,7 @@ def collect_websocket(func):
         websocket.alpha = {
             "status": "registered",
             "total_played": 0,
+            "watched_seconds": 0,
             "connectedon": datetime.now(),
             "updatedon": datetime.now(),
             "remote_addr": remote_addr,
@@ -459,7 +460,13 @@ async def ws():
             # websocket.alpha["status"] = "completed"
             # websocket.alpha["total_played"] += 1
             # websocket.alpha["updatedon"] = datetime.now() ToDo: do we need an updateon for PING/PONG?
-            # logger.debug(data.get("windowClosed"))
+            logger.debug(
+                f'Is YT window closed? {data.get("windowClosed")}, How many objects are created? {data.get("windowLength")}'
+            )
+            if not data.get("windowClosed") and 0 < data.get("windowLength") <= 5:
+                logger.info(f"{websocket.alpha.get('remote_addr')} is still connected")
+                websocket.alpha["watched_seconds"] = websocket.alpha["watched_seconds"] + 15
+
             await websocket.send(json.dumps({"request": "pong"}))
 
         if data.get("status") == "completed":
@@ -503,10 +510,10 @@ def build_requests_queue():
         html = f"""<iframe style='position: absolute; height: 100%; width: 100%; border: none' src='https://www.youtube.com/embed/{video}?&amp;autoplay=1&amp;controls=0&amp;mute=1&amp;loop=1&amp;playlist={video}' title='YouTube video player' frameborder='0' allow='autoplay; encrypted-media; picture-in-picture' allowfullscreen='' >"""
 
         refs = [
-            # "https://meditationbooster.org/api/ref?url=",
-            # "https://dropref.com/?",
-            # "https://dereferer.me/?",
-            # "https://l.facebook.com/l.php?dev=facebook&fbclid=IwAR2kH70YB6qe3tY9GPwdi8myCJwhYJbXTrltEhVWC_VCRnqdE_Zc8mBi3S8&h=AT1EzB_qaiZUk45Gw21IYzWtXuxSEOP7UnwRI2v-HWiK_PJhIy5lTzzyo74VJApuYvj7NCKOt1L3K90vGDHusNiskvD_sxRSzSN8k5xb_22TKd4Q0EH1FRrJf5r8oPSujg1WFI763TsVd8VCBg&__tn__=-UK-R&c[0]=AT02FdIeLab5VQEV5XsyDGpXuPXqk9mGYPePpMYqdDo-zwXpdkdO1RFmJ1G4tmEmp2g6u7xc9AXOvgiyraZGqHqO0jN6qVEYX9FJyM8zcKHs-gY8MWkKbFsZmr__EieuBpEs&u="
+            "https://meditationbooster.org/api/ref?url=",
+            "https://dropref.com/?",
+            "https://dereferer.me/?",
+            "https://l.facebook.com/l.php?dev=facebook&fbclid=IwAR2kH70YB6qe3tY9GPwdi8myCJwhYJbXTrltEhVWC_VCRnqdE_Zc8mBi3S8&h=AT1EzB_qaiZUk45Gw21IYzWtXuxSEOP7UnwRI2v-HWiK_PJhIy5lTzzyo74VJApuYvj7NCKOt1L3K90vGDHusNiskvD_sxRSzSN8k5xb_22TKd4Q0EH1FRrJf5r8oPSujg1WFI763TsVd8VCBg&__tn__=-UK-R&c[0]=AT02FdIeLab5VQEV5XsyDGpXuPXqk9mGYPePpMYqdDo-zwXpdkdO1RFmJ1G4tmEmp2g6u7xc9AXOvgiyraZGqHqO0jN6qVEYX9FJyM8zcKHs-gY8MWkKbFsZmr__EieuBpEs&u="
             "https://l.instagram.com/?v=GQeY_P-zxPQ&e=ATNS_Ti8mG04Nyg9DHBunTsbw865ONNUeG-6bLSvs7ln8BGXpyjwI2BqgcZphYxiBdI9eRkzcGspXeQLSyD1H7G6EH1Ky5YgTl1i&s=1&u="
             # "",
         ]
@@ -732,7 +739,7 @@ async def dashboard():
                 };
             };
 
-            connect();
+            // connect();
 
         </script>
     """
@@ -789,6 +796,9 @@ async def html():
                     </tr>
                 </tbody>
             </table>
+            <div class="alert alert-danger fade out" id="bsalert">
+                <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+            </div>
         </div>
         <script type="text/javascript">
         
@@ -800,6 +810,14 @@ async def html():
             var timer5
 
             function connect() {
+                
+                function clearTimers() {
+                    window.clearTimeout(window.timer1);
+                    window.clearTimeout(window.timer2);
+                    window.clearTimeout(window.timer3);
+                    window.clearTimeout(window.timer4);
+                    window.clearInterval(window.timer5);
+                }
 
                 var url = '||wsocket||://' + document.domain + ':' + location.port + '/api/ws'
 
@@ -811,12 +829,6 @@ async def html():
                     $('#val').text('Connected to server, waiting for command...');
                     console.log('Socket connection established');
                     ws.send(JSON.stringify({'status': 'available'}));
-
-                    function ping() {
-                        ws.send(JSON.stringify({'status': 'ping', 'windowClosed': windowObjectReference.closed}));
-                        // console.log('PING sent to server');
-                    }
-                    timer5 = window.setInterval(ping, 5000);
                 };
                 
                 ws.onclose = function(event) {
@@ -826,11 +838,7 @@ async def html():
                             console.log('[close] Connection died');
                     }
                     ws = null
-                    window.clearTimeout(window.timer1);
-                    window.clearTimeout(window.timer2);
-                    window.clearTimeout(window.timer3);
-                    window.clearTimeout(window.timer4);
-                    window.clearTimeout(window.timer5);
+                    clearTimers();
                     window.setTimeout(connect, 5000)
                     if(windowObjectReference != null) {
                         windowObjectReference.close();
@@ -855,11 +863,7 @@ async def html():
                         window.location.reload();
                     }
                     if (request == "stop") {
-                        window.clearTimeout(window.timer1);
-                        window.clearTimeout(window.timer2);
-                        window.clearTimeout(window.timer3);
-                        window.clearTimeout(window.timer4);
-                        window.clearTimeout(window.timer5);
+                        clearTimers();
                         if(windowObjectReference != null) {
                             windowObjectReference.close();
                         }
@@ -876,11 +880,7 @@ async def html():
                         //console.log('PONG received');
                     }
                     else if (request == "kill") {
-                        window.clearTimeout(window.timer1);
-                        window.clearTimeout(window.timer2);
-                        window.clearTimeout(window.timer3);
-                        window.clearTimeout(window.timer4);
-                        window.clearTimeout(window.timer5);
+                        clearTimers();
                         if(windowObjectReference != null) {
                             windowObjectReference.close();
                         }
@@ -929,12 +929,33 @@ async def html():
                             } else { 
                                 $('#val').text('Almost done');
                                 progress.val(progress.attr('min'));
-                            }
-                        }
+                            };
+                        };
                         progress.val(data.duration);
                         timer2 = window.setTimeout(reverse, updatesPerSecond);
 
                         ws.send(JSON.stringify({'status': 'playing'}));
+
+                        function ping() {
+                            ws.send(JSON.stringify({'status': 'ping', 'windowClosed': windowObjectReference.closed, 'windowLength': windowObjectReference.length}));
+                            // console.log('PING sent to server');
+                            if(windowObjectReference.closed) {
+                                clearTimers();
+                                $('#val').text('Window closed, waiting for command...');
+                                $('#bsalert').html('<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a><strong>Error!</strong> We are unabe to open the popup window. Please refresh the screen and try again.');
+                                $('#bsalert').addClass('fade out').removeClass('fade in');
+                            } else {
+                                if(windowObjectReference.length <= 0 || windowObjectReference.length >5) { 
+                                    // $('#val').text('We are unabe to play the video. Please allow Media Autoplay.');
+                                    $('#bsalert').html('<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a><strong>Warning!</strong> It looks like we are unabe to play the video. Please allow Media Autoplay.');
+                                    $('#bsalert').addClass('fade out').removeClass('fade in');
+                                } else {
+                                    $('#bsalert').removeClass('fade in').addClass('fade out');
+                                };
+
+                            };
+                        };
+                        timer5 = window.setInterval(ping, 15000);
 
                     };
                 };
@@ -955,6 +976,7 @@ async def html():
                 function closeWin() {
                     console.log('Closing window');
                     if(windowObjectReference != null) {
+                        window.clearInterval(window.timer5);  // ping timer
                         windowObjectReference.close();
                     }
                     console.log('Closed window');
@@ -981,6 +1003,28 @@ async def html():
             };
 
             connect();
+
+            function get_browser_info(){
+                var ua=navigator.userAgent,tem,M=ua.match(/(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i) || []; 
+                if(/trident/i.test(M[1])){
+                    tem=/\brv[ :]+(\d+)/g.exec(ua) || []; 
+                    return {name:'IE ',version:(tem[1]||'')};
+                    }   
+                if(M[1]==='Chrome'){
+                    tem=ua.match(/\bOPR\/(\d+)/)
+                    if(tem!=null)   {return {name:'Opera', version:tem[1]};}
+                    }   
+                M=M[2]? [M[1], M[2]]: [navigator.appName, navigator.appVersion, '-?'];
+                if((tem=ua.match(/version\/(\d+)/i))!=null) {M.splice(1,1,tem[1]);}
+                return {
+                name: M[0],
+                version: M[1]
+                };
+            }
+
+            var browser=get_browser_info();
+            console.log(browser.name);
+            console.log(browser.version);
 
         </script>
     </body>
