@@ -913,31 +913,30 @@ function connect() {
 
 			openRequestedPopup(data.redirect_url + data.video_url, 'Client');
 			timer1 = window.setTimeout(closeWin, data.duration * 1000);
-			// if (windowObjectReference.closed) -> ToDo: timer count to check if windows if opened
 
 			var interval = 1, //How much to increase the progressbar per frame
-				updatesPerSecond = data.duration * 1000 / 60, //Set the nr of updates per second (fps)
-				progress = $('progress'),
-				animator = function() {
-					progress.val(progress.val() + interval);
-					$('#val').text(progress.val());
-					if (progress.val() + interval < progress.attr('max')) {
-						timer3 = window.setTimeout(animator, updatesPerSecond);
-					} else {
-						$('#val').text('Almost done');
-						progress.val(progress.attr('max'));
-					}
-				},
-				reverse = function() {
-					progress.val(progress.val() - interval);
-					$('#val').text("Watching, " + progress.val() + "% completed");
-					if (progress.val() - interval > progress.attr('min')) {
-						timer4 = window.setTimeout(reverse, updatesPerSecond);
-					} else {
-						$('#val').text('Almost done');
-						progress.val(progress.attr('min'));
-					}
-				};
+            updatesPerSecond = data.duration * 1000 / 60, //Set the nr of updates per second (fps)
+            progress = $('progress'),
+            animator = function() {
+                progress.val(progress.val() + interval);
+                $('#val').text(progress.val());
+                if (progress.val() + interval < progress.attr('max')) {
+                    timer3 = window.setTimeout(animator, updatesPerSecond);
+                } else {
+                    $('#val').text('Almost done');
+                    progress.val(progress.attr('max'));
+                }
+            },
+            reverse = function() {
+                progress.val(progress.val() - interval);
+                $('#val').text("Watching, " + progress.val() + "% completed");
+                if (progress.val() - interval > progress.attr('min')) {
+                    timer4 = window.setTimeout(reverse, updatesPerSecond);
+                } else {
+                    $('#val').text('Almost done');
+                    progress.val(progress.attr('min'));
+                }
+            };
 			progress.val(data.duration);
 			timer2 = window.setTimeout(reverse, updatesPerSecond);
 
@@ -986,12 +985,12 @@ function connect() {
 		}
 
 		function closeWin() {
+            window.clearInterval(window.timer5); // ping timer
 			console.log('Closing window');
-			if (windowObjectReference != null) {
-				window.clearInterval(window.timer5); // ping timer
-				windowObjectReference.close();
+			if (windowObjectReference != null && !windowObjectReference.closed) {
+				    windowObjectReference.close();
 			}
-			console.log('Closed window');
+			console.log('Closed window: ' + windowObjectReference.closed);
 			ws.send(JSON.stringify({
 				'status': 'completed'
 			}));
