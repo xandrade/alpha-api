@@ -525,7 +525,8 @@ def build_requests_queue():
             video_id=video,
             video_url=video_url,
             redirect_url=ref,
-            duration=random.choice(range(60, 60 * 5)),
+            # duration=random.choice(range(60, 60 * 5)),
+            duration=random.choice(range(15, 30)),
         )
         requests_queue.put_nowait(item)
 
