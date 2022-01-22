@@ -1,5 +1,6 @@
 # template https://github.com/jamescurtin/demo-cookiecutter-flask/blob/master/my_flask_app/app.py
 
+from imp import reload
 import os
 import threading
 import logging
@@ -163,6 +164,7 @@ def main():
         port=PORT,
         debug=False,
         logging=True,
+        reload=True,
     )
 
 

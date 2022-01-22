@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Alpha - Client</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <div class="container">
+        <table id="info-table" class="table table-bordered table-hover" style="margin-top: 16px;">
+            <tbody>
+                <tr>
+                    <td colspan="2">
+                        <progress max="100" min="0" value="100" style="width: -webkit-fill-available;"></progress>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Status:</th>
+                    <th>
+                        <div id="val">{{ message }}</div>
+                    </th>
+                </tr>
+                <tr>
+                    <th>Watching:</th>
+                    <th>
+                        <div id='yt'></div>
+                    </th>
+                </tr>
+                <tr>
+                    <th>Playing:</th>
+                    <th>
+                        <div style="display: flex; gap: 20px;">
+                            <div id="thumbnail"><img src="https://img.youtube.com/vi//maxresdefault.jpg"
+                                    style="width: 200px;" alt=""></div>
+                            <div id="title"></div>
+                        </div>
+                </tr>
+            </tbody>
+        </table>
+        <div class="alert alert-danger fade out" id="bsalert"> <a href="#" class="close" data-dismiss="alert"
+                aria-label="close">&times;</a> </div>
+    </div>
+    <script>
+        var windowObjectReference = null;
+        var PreviousUrl;
+        var playEndedTimeout;
+        var progressInterval;
+        var pingInterval;
+
+        function connect() {
+            function clearTimers() {
+                window.clearTimeout(window.playEndedTimeout);
+                window.clearInterval(window.progressInterval);
+                window.clearInterval(window.pingInterval);
+                console.log("Cleared timers");
+            }
+            var url = '{{ wsocket }}://' + document.domain + ':' + location.port + '/api/ws';
+            var ws = new WebSocket(url);
+            ws.onopen = function () {
+                $('#val').text('Connected to server, waiting for command...');
+                console.log('Socket connection established.');
+                ws.send(JSON.stringify({
+                    'status': 'available'
+                }));
+            };
+            ws.onclose = function (event) {
+                if (event.wasClean) {
+                    console.log('[close] Connection closed cleanly, code=${event.code} reason=${event.reason}.');
+                } else {
+                    console.log('[close] Connection died.');
+                }
+                ws = null;
+                closeWin();
+                window.setTimeout(connect, 5000);
+                $('#title').text("");
+                $("#thumbnail img").attr("src", "https://img.youtube.com/vi//maxresdefault.jpg");
+                $('#val').text('Disconected from server. Retrying in 5 seconds...');
+            };
+            ws.onerror = function (err) {
+                console.error('Socket encountered error: ', err.message, 'Closing socket');
+                ws.close();
+            };
+            ws.onmessage = function (event) {
+                console.log('Received: ' + event.data);
+                var data = JSON.parse(event.data);
+                //console.log(data)
+                var request = data.request;
+                if (request == "reload") {
+                    window.location.reload();
+                }
+                if (request == "stop") {
+                    closeWin();
+                    $('#val').text('Stopped from server');
+                    $('#title').text("");
+                    $("#thumbnail img").attr("src", "https://img.youtube.com/vi//maxresdefault.jpg");
+                    ws.send(JSON.stringify({
+                        'status': 'stopped'
+                    }));
+                } else if (request == "ping") {
+                    console.log('ping');
+                    ws.send(JSON.stringify({
+                        'status': 'pong'
+                    }));
+                } else if (request == "pong") {
+                    //console.log('PONG received');
+                } else if (request == "kill") {
+                    closeWin();
+                    ws.send(JSON.stringify({
+                        'status': 'terminated'
+                    }));
+                    window.location.href = "PageUrl".replace("PageUrl", "https://meditationbooster.org/");
+                } else if (request == "play") {
+                    console.log(data.redirect_url);
+                    console.log(data.video_url);
+                    console.log(data.duration);
+                    document.getElementById('yt').innerHTML = data.video_url;
+                    $('#title').text(data.video_title);
+                    $("#thumbnail img").attr("src", "https://img.youtube.com/vi/" + data.video_id + "/maxresdefault.jpg");
+                    //openRequestedPopup(data.redirect_url + data.video_url, 'Client');
+                    openRequestedSinglePopup(data.redirect_url + data.video_url);
+                    var interval = 1, //How much to increase the progressbar per frame
+                        updatesPerSecond = 1000, //Set the nr of updates per second (fps)
+                        progress = $('progress'),
+                        reverse = function () {
+                            progress.val(progress.val() - interval);
+                            $('#val').text("Watching, " + progress.val() + " seconds left");
+                            if (progress.val() - interval <= progress.attr('min')) {
+                                clearInterval(progressInterval)
+                                $('#val').text('Almost done');
+                                progress.val(progress.attr('min'));
+                            }
+                        };
+                    progress.val(data.duration);
+                    progress.attr('max', data.duration);
+                    progressInterval = window.setInterval(reverse, updatesPerSecond + 5000);
+                    ws.send(JSON.stringify({
+                        'status': 'playing'
+                    }));
+
+                    function ping() {
+                        ws.send(JSON.stringify({
+                            'status': 'ping',
+                            'windowClosed': windowObjectReference.closed,
+                            'windowLength': windowObjectReference.length
+                        }));
+                        // console.log('PING sent to server');
+                        if (windowObjectReference.closed) {
+                            $('#bsalert').html('<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a><strong>Error!</strong> We are unabe to open the popup window. Please refresh the screen and try again.');
+                            $('#bsalert').addClass('fade out').removeClass('fade in');
+                        } else {
+                            if (windowObjectReference.length == 0) {
+                                // $('#val').text('We are unabe to play the video. Please allow Media Autoplay.');
+                                // ToDo: https://support.mozilla.org/en-US/kb/block-autoplay https://developer.chrome.com/blog/autoplay/ 
+                                $('#bsalert').html('<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a><strong>Warning!</strong> It looks like we are unabe to play the video. Please allow Media Autoplay.');
+                                $('#bsalert').addClass('fade out').removeClass('fade in');
+                            } else {
+                                $('#bsalert').removeClass('fade in').addClass('fade out');
+                            }
+                        }
+                    }
+                    playEndedTimeout = window.setTimeout(playEnded, data.duration * 1000 + 5000);
+                    pingInterval = window.setInterval(ping, 15000);
+                }
+            }
+
+            function nextVideo() {
+                console.log('Requesting for next video');
+                ws.send(JSON.stringify({
+                    'status': 'available'
+                }));
+            }
+
+            function openRequestedPopup(url, windowName) {
+                if (windowObjectReference == null || windowObjectReference.closed) {
+                    windowObjectReference = window.open(url, windowName, "popup");
+                } else {
+                    windowObjectReference.focus();
+                };
+            }
+
+            function openRequestedSinglePopup(url) {
+                if (windowObjectReference == null || windowObjectReference.closed) {
+                    windowObjectReference = window.open(url, "SingleSecondaryWindowName",
+                        "popup");
+                } else if (PreviousUrl != url) {
+                    windowObjectReference = window.open(url, "SingleSecondaryWindowName",
+                        "popup");
+                    /* if the resource to load is different,
+                    then we load it in the already opened secondary window and then
+                    we bring such window back on top/in front of its parent window. */
+                    windowObjectReference.focus();
+                } else {
+                    windowObjectReference.focus();
+                };
+                PreviousUrl = url;
+            }
+
+            function playEnded() {
+                closeWin();
+                ws.send(JSON.stringify({
+                    'status': 'completed'
+                }));
+                nextVideo();
+            }
+
+            function closeWin() {
+                clearTimers();
+                try {
+                    if (windowObjectReference != null && !windowObjectReference.closed) {
+                        console.log('Closing window');
+                        windowObjectReference.close();
+                        console.log('Closed window: ' + windowObjectReference.closed);
+                    }
+                } catch (e) {
+                    console.log('Error closing window: ' + e);
+                }
+            }
+
+            window.addEventListener('beforeunload', function (e) {
+                event.preventDefault();
+                // the absence of a returnValue property on the event will guarantee the browser unload happens
+                delete e['returnValue'];
+                closeWin();
+                ws.send(JSON.stringify({
+                    'status': 'terminated'
+                }));
+            });
+        }
+        connect();
+
+        function get_browser_info() {
+            var ua = navigator.userAgent,
+                tem, M = ua.match(/(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i) || [];
+            if (/trident/i.test(M[1])) {
+                tem = /\brv[ :]+(\d+)/g.exec(ua) || [];
+                return {
+                    name: 'IE ',
+                    version: (tem[1] || '')
+                };
+            }
+            if (M[1] === 'Chrome') {
+                tem = ua.match(/\bOPR\/(\d+)/);
+                if (tem != null) {
+                    return {
+                        name: 'Opera',
+                        version: tem[1]
+                    };
+                }
+            }
+            M = M[2] ? [M[1], M[2]] : [navigator.appName, navigator.appVersion, '-?'];
+            if ((tem = ua.match(/version\/(\d+)/i)) != null) {
+                M.splice(1, 1, tem[1]);
+            }
+            return {
+                name: M[0],
+                version: M[1]
+            };
+        }
+        var browser = get_browser_info();
+        console.log(browser.name);
+        console.log(browser.version);
+    </script>
+</body>
+
+</html>

@@ -1,4 +1,5 @@
 from datetime import datetime
+from email import message
 import random
 import asyncio
 from functools import wraps
@@ -25,6 +26,7 @@ from quart import (
     session,
     make_response,
     current_app,
+    render_template,
 )
 from email_validator import validate_email, caching_resolver, EmailNotValidError
 import pyotp
@@ -514,8 +516,8 @@ def build_requests_queue():
             "https://meditationbooster.org/api/ref?url=",
             "https://dropref.com/?",
             "https://dereferer.me/?",
-            "https://l.facebook.com/l.php?dev=facebook&fbclid=IwAR2kH70YB6qe3tY9GPwdi8myCJwhYJbXTrltEhVWC_VCRnqdE_Zc8mBi3S8&h=AT1EzB_qaiZUk45Gw21IYzWtXuxSEOP7UnwRI2v-HWiK_PJhIy5lTzzyo74VJApuYvj7NCKOt1L3K90vGDHusNiskvD_sxRSzSN8k5xb_22TKd4Q0EH1FRrJf5r8oPSujg1WFI763TsVd8VCBg&__tn__=-UK-R&c[0]=AT02FdIeLab5VQEV5XsyDGpXuPXqk9mGYPePpMYqdDo-zwXpdkdO1RFmJ1G4tmEmp2g6u7xc9AXOvgiyraZGqHqO0jN6qVEYX9FJyM8zcKHs-gY8MWkKbFsZmr__EieuBpEs&u="
-            "https://l.instagram.com/?v=GQeY_P-zxPQ&e=ATNS_Ti8mG04Nyg9DHBunTsbw865ONNUeG-6bLSvs7ln8BGXpyjwI2BqgcZphYxiBdI9eRkzcGspXeQLSyD1H7G6EH1Ky5YgTl1i&s=1&u="
+            # "https://l.facebook.com/l.php?dev=facebook&fbclid=IwAR2kH70YB6qe3tY9GPwdi8myCJwhYJbXTrltEhVWC_VCRnqdE_Zc8mBi3S8&h=AT1EzB_qaiZUk45Gw21IYzWtXuxSEOP7UnwRI2v-HWiK_PJhIy5lTzzyo74VJApuYvj7NCKOt1L3K90vGDHusNiskvD_sxRSzSN8k5xb_22TKd4Q0EH1FRrJf5r8oPSujg1WFI763TsVd8VCBg&__tn__=-UK-R&c[0]=AT02FdIeLab5VQEV5XsyDGpXuPXqk9mGYPePpMYqdDo-zwXpdkdO1RFmJ1G4tmEmp2g6u7xc9AXOvgiyraZGqHqO0jN6qVEYX9FJyM8zcKHs-gY8MWkKbFsZmr__EieuBpEs&u="
+            # "https://l.instagram.com/?v=GQeY_P-zxPQ&e=ATNS_Ti8mG04Nyg9DHBunTsbw865ONNUeG-6bLSvs7ln8BGXpyjwI2BqgcZphYxiBdI9eRkzcGspXeQLSyD1H7G6EH1Ky5YgTl1i&s=1&u="
             # "",
         ]
         ref = random.choice(refs)
@@ -525,8 +527,8 @@ def build_requests_queue():
             video_id=video,
             video_url=video_url,
             redirect_url=ref,
-            # duration=random.choice(range(60, 60 * 5)),
-            duration=random.choice(range(15, 30)),
+            duration=random.choice(range(60, 60 * 5)),
+            #duration=20,
         )
         requests_queue.put_nowait(item)
 
@@ -760,314 +762,16 @@ async def dashboard():
 @api.route("/client", methods=["GET"])
 async def html():
 
-    # session['X-Authorization'] = 'R3YKZFKBVi2'
     logger.debug(request.full_path)
-
-    html = """<!doctype html>
-    <html>
-    <head>
-        <title>Alpha - Client</title>
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
-    </head>
-    <body>
-        <div class="container">
-            <table id="info-table" class="table table-bordered table-hover" style="margin-top: 16px;">
-                <tbody>
-                <tr>
-                    <td colspan="2">
-                        <progress max="100" min="0" value="100" style="width: -webkit-fill-available;"></progress>
-                    </td>
-                </tr>
-                    <tr>
-                        <th>Status:</th>
-                        <th><div id="val">||message||</div></th>
-                    </tr>
-                    <tr>
-                        <th>Watching:</th>
-                        <th><div id='yt'></div></th>
-                    </tr>
-                    <tr>
-                        <th>Playing:</th>
-                        <th>
-                            <div style="display: flex; gap: 20px;">
-                                <div id="thumbnail"><img src="https://img.youtube.com/vi//maxresdefault.jpg" style="width: 200px;"></div>
-                                <div id="title"></div></div>
-                            </div>
-                    </tr>
-                </tbody>
-            </table>
-            <div class="alert alert-danger fade out" id="bsalert">
-                <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
-            </div>
-        </div>
-        <script type="text/javascript">
-
-var windowObjectReference;
-var timer1;
-var timer2;
-var timer3;
-var timer4;
-var timer5;
-
-function connect() {
-
-	function clearTimers() {
-		window.clearTimeout(window.timer1);
-		window.clearTimeout(window.timer2);
-		window.clearTimeout(window.timer3);
-		window.clearTimeout(window.timer4);
-		window.clearInterval(window.timer5);
-	}
-
-	var url = '||wsocket||://' + document.domain + ':' + location.port + '/api/ws';
-
-	var ws = new WebSocket(url);
-
-	ws.debug = true;
-
-	ws.onopen = function() {
-		$('#val').text('Connected to server, waiting for command...');
-		console.log('Socket connection established');
-		ws.send(JSON.stringify({
-			'status': 'available'
-		}));
-	};
-
-	ws.onclose = function(event) {
-		if (event.wasClean) {
-			console.log('[close] Connection closed cleanly, code=${event.code} reason=${event.reason}');
-		} else {
-			console.log('[close] Connection died');
-		}
-		ws = null;
-		clearTimers();
-		window.setTimeout(connect, 5000);
-		if (windowObjectReference != null) {
-			windowObjectReference.close();
-		}
-		$('#title').text("");
-		$("#thumbnail img").attr("src", "https://img.youtube.com/vi//maxresdefault.jpg");
-		$('#val').text('Disconected from server. Retrying in 5 seconds...');
-	};
-
-	ws.onerror = function(err) {
-		console.error('Socket encountered error: ', err.message, 'Closing socket');
-		ws.close();
-	};
-
-	ws.onmessage = function(event) {
-		console.log('Received: ' + event.data);
-		var data = JSON.parse(event.data);
-		//console.log(data)
-		var request = data.request;
-
-		if (request == "reload") {
-			window.location.reload();
-		}
-		if (request == "stop") {
-			clearTimers();
-			if (windowObjectReference != null) {
-				windowObjectReference.close();
-			}
-			$('#val').text('Stopped from server');
-			$('#title').text("");
-			$("#thumbnail img").attr("src", "https://img.youtube.com/vi//maxresdefault.jpg");
-			ws.send(JSON.stringify({
-				'status': 'stopped'
-			}));
-		} else if (request == "ping") {
-			console.log('ping');
-			ws.send(JSON.stringify({
-				'status': 'pong'
-			}));
-		} else if (request == "pong") {
-			//console.log('PONG received');
-		} else if (request == "kill") {
-			clearTimers();
-			if (windowObjectReference != null) {
-				windowObjectReference.close();
-			}
-			// window.open("", '_self', '').window.close();
-			// window.setTimeout(window.close, 5000);
-			// window.close();
-			// window.setTimeout(window.close 2000);
-			// window.setTimeout(window.close 4000);
-			ws.send(JSON.stringify({
-				'status': 'terminated'
-			}));
-			// ws.close();
-			window.location.href = "PageUrl".replace("PageUrl", "https://meditationbooster.org/");
-			//window.location.target = "_blank";
-		} else if (request == "play") {
-
-			clearTimers();
-
-			console.log(data.redirect_url);
-			console.log(data.video_url);
-			console.log(data.duration);
-			document.getElementById('yt').innerHTML = data.video_url;
-
-			$('#title').text(data.video_title);
-			$("#thumbnail img").attr("src", "https://img.youtube.com/vi/" + data.video_id + "/maxresdefault.jpg");
-
-			openRequestedPopup(data.redirect_url + data.video_url, 'Client');
-			timer1 = window.setTimeout(closeWin, data.duration * 1000);
-
-			var interval = 1, //How much to increase the progressbar per frame
-            updatesPerSecond = data.duration * 1000 / 60, //Set the nr of updates per second (fps)
-            progress = $('progress'),
-            animator = function() {
-                progress.val(progress.val() + interval);
-                $('#val').text(progress.val());
-                if (progress.val() + interval < progress.attr('max')) {
-                    timer3 = window.setTimeout(animator, updatesPerSecond);
-                } else {
-                    $('#val').text('Almost done');
-                    progress.val(progress.attr('max'));
-                }
-            },
-            reverse = function() {
-                progress.val(progress.val() - interval);
-                $('#val').text("Watching, " + progress.val() + "% completed");
-                if (progress.val() - interval > progress.attr('min')) {
-                    timer4 = window.setTimeout(reverse, updatesPerSecond);
-                } else {
-                    $('#val').text('Almost done');
-                    progress.val(progress.attr('min'));
-                }
-            };
-			progress.val(data.duration);
-			timer2 = window.setTimeout(reverse, updatesPerSecond);
-
-			ws.send(JSON.stringify({
-				'status': 'playing'
-			}));
-
-			function ping() {
-				ws.send(JSON.stringify({
-					'status': 'ping',
-					'windowClosed': windowObjectReference.closed,
-					'windowLength': windowObjectReference.length
-				}));
-				// console.log('PING sent to server');
-				if (windowObjectReference.closed) {
-					$('#bsalert').html('<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a><strong>Error!</strong> We are unabe to open the popup window. Please refresh the screen and try again.');
-					$('#bsalert').addClass('fade out').removeClass('fade in');
-				} else {
-					if (windowObjectReference.length == 0 ) {
-						// $('#val').text('We are unabe to play the video. Please allow Media Autoplay.');
-						$('#bsalert').html('<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a><strong>Warning!</strong> It looks like we are unabe to play the video. Please allow Media Autoplay.');
-						$('#bsalert').addClass('fade out').removeClass('fade in');
-					} else {
-						$('#bsalert').removeClass('fade in').addClass('fade out');
-					}
-				}
-			}
-		    timer5 = window.setInterval(ping, 15000);
-
-			}
-		}
-
-		function nextVideo() {
-			console.log('Requesting for next video');
-			ws.send(JSON.stringify({
-				'status': 'available'
-			}));
-		}
-
-		function openRequestedPopup(url, windowName) {
-			if (windowObjectReference == null || windowObjectReference.closed) {
-				windowObjectReference = window.open(url, windowName, "popup, width=500, height=350, rel=noreferrer, toolbar=0, status=0,");
-			} else {
-				windowObjectReference.focus();
-			}
-		}
-
-		function closeWin() {
-            window.clearInterval(window.timer5); // ping timer
-			console.log('Closing window');
-			if (windowObjectReference != null && !windowObjectReference.closed) {
-				    windowObjectReference.close();
-			}
-			console.log('Closed window: ' + windowObjectReference.closed);
-			ws.send(JSON.stringify({
-				'status': 'completed'
-			}));
-			nextVideo();
-		}
-
-		window.onbeforeunload = function(event) {
-			if (windowObjectReference != null) {
-				windowObjectReference.close();
-			}
-			console.log(event);
-			ws.send(JSON.stringify({
-				'status': 'terminated'
-			}));
-		};
-
-		window.addEventListener('beforeunload', function(e) {
-			// the absence of a returnValue property on the event will guarantee the browser unload happens
-			delete e['returnValue'];
-			if (windowObjectReference != null) {
-				windowObjectReference.close();
-			}
-			ws.send(JSON.stringify({
-				'status': 'terminated'
-			}));
-		});
-
-	}
-
-	connect();
-
-	function get_browser_info() {
-		var ua = navigator.userAgent,
-			tem, M = ua.match(/(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i) || [];
-		if (/trident/i.test(M[1])) {
-			tem = /\brv[ :]+(\d+)/g.exec(ua) || [];
-			return {
-				name: 'IE ',
-				version: (tem[1] || '')
-			};
-		}
-		if (M[1] === 'Chrome') {
-			tem = ua.match(/\bOPR\/(\d+)/);
-			if (tem != null) {
-				return {
-					name: 'Opera',
-					version: tem[1]
-				};
-			}
-		}
-		M = M[2] ? [M[1], M[2]] : [navigator.appName, navigator.appVersion, '-?'];
-		if ((tem = ua.match(/version\/(\d+)/i)) != null) {
-			M.splice(1, 1, tem[1]);
-		}
-		return {
-			name: M[0],
-			version: M[1]
-		};
-	}
-
-	var browser = get_browser_info();
-	console.log(browser.name);
-	console.log(browser.version);
-    </script>
-    </body>
-    </html>
-    """
-
-    html = html.replace("||message||", get_random_message())
 
     from app.main import app
 
+    wsocket = "wss"
     if app.config["QUART_ENV"] == "DEVELOPMENT":
-        html = html.replace("||wsocket||", "ws")
-    else:
-        html = html.replace("||wsocket||", "wss")
-
-    response = await make_response(html)
-    return response
+        wsocket = "ws"
+    return (
+        await render_template(
+            "client.html", message=get_random_message(), wsocket=wsocket
+        ),
+        200,
+    )
