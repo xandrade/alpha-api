@@ -211,26 +211,19 @@ async def ref():
         <meta name=referrer content=never>
         <meta name=robots content="noindex, nofollow">
         <!-- <meta http-equiv=refresh content="3; URL="{url}"> -->
-        <link rel="stylesheet" href="assets/css/main.css">
+        <link rel="stylesheet" href="../assets/css/main.css">
     </head>
     <body>
     <div style="position:fixed;z-index:-99;width:100%;height:100%;left:0px;top:0px;opacity:70%;">
-		<image src="https://images.pexels.com/photos/694587/pexels-photo-694587.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"><>
+		<image src="https://cdn.pixabay.com/photo/2020/10/03/06/45/sketch-5622725_960_720.jpg"><>
 	</div>
-    <section id="friend" class="main style3 secondary">
+    <section id="redirect" class="main style3 secondary">
 		<div class="content">
 			<header>
 				<h2>Within a few seconds, you are being redirected to:</h2>
 			</header>
             <div class="box">
                 <p><a href="{url}">{url}</a></p>
-            </div>
-            <div class="box">
-                <ul class="actions special">
-                    <li><input type="submit" value="Subscribe"></li>
-                    <li><input type="submit" value="Subscribe"></li>
-                    <li><input type="submit" value="Subscribe"></li>
-                </ul>
             </div>
 		</div>
 	</section>
