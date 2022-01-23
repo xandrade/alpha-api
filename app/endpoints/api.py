@@ -215,28 +215,23 @@ async def ref():
     </head>
     <body>
     <div style="position:fixed;z-index:-99;width:100%;height:100%;left:0px;top:0px;opacity:70%;">
-		here
+		<image src="https://images.pexels.com/photos/694587/pexels-photo-694587.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"><>
 	</div>
-    <div>
-        <p>Within a few seconds, you are being redirected to:</p>
-        <div class="box">
-            <p><a href="{url}">{url}</a></p>
-		</div>
-    </div>
     <section id="friend" class="main style3 secondary">
 		<div class="content">
 			<header>
 				<h2>Within a few seconds, you are being redirected to:</h2>
-				<p><a href="{url}">{url}</a></p>
 			</header>
             <div class="box">
                 <p><a href="{url}">{url}</a></p>
-            </div>  			
-            <ul class="actions special">
-                <li><input type="submit" value="Subscribe"></li>
-                <li><input type="submit" value="Subscribe"></li>
-                <li><input type="submit" value="Subscribe"></li>
-            </ul>
+            </div>
+            <div class="box">
+                <ul class="actions special">
+                    <li><input type="submit" value="Subscribe"></li>
+                    <li><input type="submit" value="Subscribe"></li>
+                    <li><input type="submit" value="Subscribe"></li>
+                </ul>
+            </div>
 		</div>
 	</section>
     </body>
