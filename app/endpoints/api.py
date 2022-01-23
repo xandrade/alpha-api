@@ -217,6 +217,19 @@ async def ref():
     <div style="position:fixed;z-index:-99;width:100%;height:100%;left:0px;top:0px;opacity:70%;">
 		<image src="https://cdn.pixabay.com/photo/2020/10/03/06/45/sketch-5622725_960_720.jpg"><>
 	</div>
+    <header id="header">
+		<h1>Meditation Booster</h1>
+		<nav>
+			<ul>
+				<li><a href="#intro">Intro</a></li>
+				<li><a href="#one">What We Do</a></li>
+				<li><a href="#two">Who We Are</a></li>
+				<li><a href="#work">Our Work</a></li>
+				<li><a href="#friend">Friend</a></li>
+				<li><a href="#contact">Contact</a></li>
+			</ul>
+		</nav>
+	</header>
     <section id="redirect" class="main style3 secondary">
 		<div class="content">
 			<header>
