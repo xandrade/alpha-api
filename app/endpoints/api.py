@@ -210,7 +210,7 @@ async def ref():
         <meta http-equiv=content-type content="text/html; charset=utf-8"
         <meta name=referrer content=never>
         <meta name=robots content="noindex, nofollow">
-        <meta http-equiv=refresh content="3; URL="{url}">
+        <meta http-equiv=refresh content="3; URL={url!r}">
         <link rel="stylesheet" href="../assets/css/main.css">
     </head>
     <body>
