@@ -207,10 +207,38 @@ async def ref():
 
     return f"""
     <head>
-    <meta http-equiv="refresh" content="5; URL={url}" />
+        <meta http-equiv=content-type content="text/html; charset=utf-8"
+        <meta name=referrer content=never>
+        <meta name=robots content="noindex, nofollow">
+        <!-- <meta http-equiv=refresh content="3; URL="{url}"> -->
+        <link rel="stylesheet" href="assets/css/main.css">
     </head>
     <body>
-    <p>If you are not redirected in five seconds, <a href="{url}">click here</a>.</p>
+    <div style="position:fixed;z-index:-99;width:100%;height:100%;left:0px;top:0px;opacity:70%;">
+		here
+	</div>
+    <div>
+        <p>Within a few seconds, you are being redirected to:</p>
+        <div class="box">
+            <p><a href="{url}">{url}</a></p>
+		</div>
+    </div>
+    <section id="friend" class="main style3 secondary">
+		<div class="content">
+			<header>
+				<h2>Within a few seconds, you are being redirected to:</h2>
+				<p><a href="{url}">{url}</a></p>
+			</header>
+            <div class="box">
+                <p><a href="{url}">{url}</a></p>
+            </div>  			
+            <ul class="actions special">
+                <li><input type="submit" value="Subscribe"></li>
+                <li><input type="submit" value="Subscribe"></li>
+                <li><input type="submit" value="Subscribe"></li>
+            </ul>
+		</div>
+	</section>
     </body>
     """
 
@@ -528,7 +556,7 @@ def build_requests_queue():
             video_url=video_url,
             redirect_url=ref,
             duration=random.choice(range(60, 60 * 5)),
-            #duration=20,
+            # duration=20,
         )
         requests_queue.put_nowait(item)
 
