@@ -224,21 +224,24 @@ async def ref():
             </div>
             <div style="width: 100px; justify-content: center; display: inline-flex;">
                 <svg version="1.1" id="L9" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 100 100" enable-background="new 0 0 0 0" xml:space="preserve">
-                    <rect x="20" y="50" width="4" height="10" fill="#fff">
+                    <rect x="20" y="50" width="4" height="10" fill="#000">
                     <animateTransform attributeType="xml" attributeName="transform" type="translate" values="0 0; 0 20; 0 0" begin="0" dur="0.6s" repeatCount="indefinite"></animateTransform>
                     </rect>
-                    <rect x="30" y="50" width="4" height="10" fill="#fff">
+                    <rect x="30" y="50" width="4" height="10" fill="#000">
                     <animateTransform attributeType="xml" attributeName="transform" type="translate" values="0 0; 0 20; 0 0" begin="0.2s" dur="0.6s" repeatCount="indefinite"></animateTransform>
                     </rect>
-                    <rect x="40" y="50" width="4" height="10" fill="#fff">
+                    <rect x="40" y="50" width="4" height="10" fill="#000">
                     <animateTransform attributeType="xml" attributeName="transform" type="translate" values="0 0; 0 20; 0 0" begin="0.4s" dur="0.6s" repeatCount="indefinite"></animateTransform>
                     </rect>
-                    <rect x="50" y="60" width="4" height="10" fill="#fff">
+                    <rect x="50" y="50" width="4" height="10" fill="#000">
                     <animateTransform attributeType="xml" attributeName="transform" type="translate" values="0 0; 0 20; 0 0" begin="0.6s" dur="0.6s" repeatCount="indefinite"></animateTransform>
                     </rect>
-                    <rect x="60" y="70" width="4" height="10" fill="#fff">
+                    <rect x="60" y="50" width="4" height="10" fill="#000">
                     <animateTransform attributeType="xml" attributeName="transform" type="translate" values="0 0; 0 20; 0 0" begin="0.8s" dur="0.6s" repeatCount="indefinite"></animateTransform>
                     </rect>
+                    <rect x="70" y="50" width="4" height="10" fill="#000">
+                    <animateTransform attributeType="xml" attributeName="transform" type="translate" values="0 0; 0 20; 0 0" begin="1.0s" dur="0.6s" repeatCount="indefinite"></animateTransform>
+
 
                 </svg>
             </div>
