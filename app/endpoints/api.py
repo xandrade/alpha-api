@@ -222,7 +222,7 @@ async def ref():
             <div class="box">
                 <p><a href="{url}">{url}</a></p>
             </div>
-            <div class="box">
+            <div style="width: 100px; justify-content: center; display: inline-flex;">
                 <svg version="1.1" id="L9" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 100 100" enable-background="new 0 0 0 0" xml:space="preserve">
                     <rect x="20" y="50" width="4" height="10" fill="#fff">
                     <animateTransform attributeType="xml" attributeName="transform" type="translate" values="0 0; 0 20; 0 0" begin="0" dur="0.6s" repeatCount="indefinite"></animateTransform>
@@ -233,6 +233,13 @@ async def ref():
                     <rect x="40" y="50" width="4" height="10" fill="#fff">
                     <animateTransform attributeType="xml" attributeName="transform" type="translate" values="0 0; 0 20; 0 0" begin="0.4s" dur="0.6s" repeatCount="indefinite"></animateTransform>
                     </rect>
+                    <rect x="50" y="60" width="4" height="10" fill="#fff">
+                    <animateTransform attributeType="xml" attributeName="transform" type="translate" values="0 0; 0 20; 0 0" begin="0.6s" dur="0.6s" repeatCount="indefinite"></animateTransform>
+                    </rect>
+                    <rect x="60" y="70" width="4" height="10" fill="#fff">
+                    <animateTransform attributeType="xml" attributeName="transform" type="translate" values="0 0; 0 20; 0 0" begin="0.8s" dur="0.6s" repeatCount="indefinite"></animateTransform>
+                    </rect>
+
                 </svg>
             </div>
 		</div>
