@@ -210,7 +210,7 @@ async def ref():
         <meta http-equiv=content-type content="text/html; charset=utf-8"
         <meta name=referrer content=never>
         <meta name=robots content="noindex, nofollow">
-        <meta http-equiv=refresh content="3; URL={url!r}">
+        <!-- <meta http-equiv=refresh content="5; URL={url!r}"> -->
         <link rel="stylesheet" href="../assets/css/main.css">
     </head>
     <body>
@@ -221,6 +221,19 @@ async def ref():
 			</header>
             <div class="box">
                 <p><a href="{url}">{url}</a></p>
+            </div>
+            <div class="box">
+                <svg version="1.1" id="L9" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 100 100" enable-background="new 0 0 0 0" xml:space="preserve">
+                    <rect x="20" y="50" width="4" height="10" fill="#fff">
+                    <animateTransform attributeType="xml" attributeName="transform" type="translate" values="0 0; 0 20; 0 0" begin="0" dur="0.6s" repeatCount="indefinite"></animateTransform>
+                    </rect>
+                    <rect x="30" y="50" width="4" height="10" fill="#fff">
+                    <animateTransform attributeType="xml" attributeName="transform" type="translate" values="0 0; 0 20; 0 0" begin="0.2s" dur="0.6s" repeatCount="indefinite"></animateTransform>
+                    </rect>
+                    <rect x="40" y="50" width="4" height="10" fill="#fff">
+                    <animateTransform attributeType="xml" attributeName="transform" type="translate" values="0 0; 0 20; 0 0" begin="0.4s" dur="0.6s" repeatCount="indefinite"></animateTransform>
+                    </rect>
+                </svg>
             </div>
 		</div>
 	</section>
