@@ -345,10 +345,7 @@ def collect_websocket(func):
             # "extra": {item[0]: item[1] for item in websocket.headers._list},
             "last_request": None,
             "country": result["country_name"],
-            "browser_name": None,
-            "browser_version": None,
-            "browser_platform": None,
-            "browser_language": None,
+            "browser": None,
         }
         clients.add(websocket._get_current_object())
         logger.info(websocket.alpha)
@@ -542,6 +539,14 @@ async def ws():
             websocket.alpha["browser_version"] = data.get("browser_version")
             websocket.alpha["browser_platform"] = data.get("browser_platform")
             websocket.alpha["browser_language"] = data.get("browser_language")
+
+            websocket.alpha["browser"] = {
+                "name": data.get("browser_name"),
+                "version": data.get("browser_version"),
+                "platform": data.get("browser_platform"),
+                "language": data.get("browser_language"),
+            }
+
             await client_actions("play", websocket.alpha["sec_id"])
 
 
