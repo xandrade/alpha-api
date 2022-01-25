@@ -535,11 +535,6 @@ async def ws():
         elif data.get("status") == "available":
             websocket.alpha["updatedon"] = datetime.now()
             websocket.alpha["status"] = "available"
-            websocket.alpha["browser_name"] = data.get("browser_name")
-            websocket.alpha["browser_version"] = data.get("browser_version")
-            websocket.alpha["browser_platform"] = data.get("browser_platform")
-            websocket.alpha["browser_language"] = data.get("browser_language")
-
             websocket.alpha["browser"] = {
                 "name": data.get("browser_name"),
                 "version": data.get("browser_version"),
