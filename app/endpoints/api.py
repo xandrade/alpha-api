@@ -345,6 +345,10 @@ def collect_websocket(func):
             # "extra": {item[0]: item[1] for item in websocket.headers._list},
             "last_request": None,
             "country": result["country_name"],
+            "browser_name": None,
+            "browser_version": None,
+            "browser_platform": None,
+            "browser_language": None,
         }
         clients.add(websocket._get_current_object())
         logger.info(websocket.alpha)
@@ -532,9 +536,12 @@ async def ws():
             # )
 
         elif data.get("status") == "available":
-            websocket.alpha["status"] = "available"
             websocket.alpha["updatedon"] = datetime.now()
-
+            websocket.alpha["status"] = "available"
+            websocket.alpha["browser_name"] = data.get("browser_name")
+            websocket.alpha["browser_version"] = data.get("browser_version")
+            websocket.alpha["browser_platform"] = data.get("browser_platform")
+            websocket.alpha["browser_language"] = data.get("browser_language")
             await client_actions("play", websocket.alpha["sec_id"])
 
 
