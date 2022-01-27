@@ -11,7 +11,7 @@ import json
 # script_dir = os.path.dirname(__file__)
 # mymodule_dir = os.path.join(script_dir, "..", "user")
 # sys.path.append(mymodule_dir)
-from app.user.models import Friends, Users, Videos, WatchedVideos, RefUrls
+from app.user.models import Friends, Users, YTVideos, YTVideosWatched, RefUrls
 from app.data import ViewItem
 from app.message import get_random_message
 from app.youtube.tools import get_video_title
@@ -129,18 +129,18 @@ async def list_all():
 
         friends = await Friends.all()
         users = await Users.all()
-        videos = await Videos.all()
-        watchedvideos = await WatchedVideos.all()
+        yt_videos = await YTVideos.all()
+        yt_videos_watched = await YTVideosWatched.all()
         refurls = await RefUrls.all()
 
         return jsonify(
             {
                 "friends": [str(items) for friend in friends for items in friend],
                 "users": [str(items) for user in users for items in user],
-                "videos": [str(items) for video in videos for items in video],
+                "yt_videos": [str(items) for video in yt_videos for items in video],
                 "watchedvideos": [
                     str(items)
-                    for watchedvideo in watchedvideos
+                    for watchedvideo in yt_videos_watched
                     for items in watchedvideo
                 ],
                 "refurls": [str(items) for refurl in refurls for items in refurl],

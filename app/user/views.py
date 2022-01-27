@@ -4,7 +4,7 @@ import asyncio
 from functools import wraps
 from unicodedata import name
 
-from .models import Friends, Users, Videos, WatchedVideos, RefUrls
+from .models import Users
 
 from quart import (
     Blueprint,

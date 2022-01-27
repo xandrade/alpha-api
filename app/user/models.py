@@ -1,12 +1,78 @@
 from typing import Optional
-import json
-from quart.ctx import AppContext
 
+from quart.ctx import AppContext
 from tortoise.models import Model
 from tortoise import fields
 from quart_auth import AuthUser
 
 from app.extensions import bcrypt
+
+
+__models__ = [
+    "Friends",
+    "Users",
+    "YTClients",
+    "YTVideos",
+    "YTVideosWatched",
+    "YTChannels",
+    "YTPlaylists",
+    "YTPlaylistItems",
+    "RefUrls",
+    "Navigation",
+]
+
+
+class YTPlaylistItems(Model):
+    id = fields.IntField(pk=True)
+    playlist_id = fields.IntField()
+    video_id = fields.CharField(max_length=100)
+    video_title = fields.CharField(max_length=100)
+    video_description = fields.TextField()
+    video_thumbnail = fields.CharField(max_length=100)
+    video_duration = fields.IntField()
+    video_position = fields.IntField()
+    video_published_at = fields.DatetimeField()
+
+    class Meta:
+        table = "yt_playlist_items"
+
+
+class YTPlaylists(Model):
+    id = fields.IntField(pk=True)
+    title = fields.TextField()
+    description = fields.TextField(null=True)
+    published_at = fields.DatetimeField(null=True)
+    channel_id = fields.IntField(null=True)
+    channel_title = fields.TextField(null=True)
+    channel_description = fields.TextField(null=True)
+    channel_published_at = fields.DatetimeField(null=True)
+    channel_thumbnails = fields.JSONField(null=True)
+    channel_subscriber_count = fields.IntField(null=True)
+    channel_view_count = fields.IntField(null=True)
+    channel_video_count = fields.IntField(null=True)
+    channel_country = fields.TextField(null=True)
+    channel_language = fields.TextField(null=True)
+    channel_type = fields.TextField(null=True)
+
+    class Meta:
+        table = "yt_playlists"
+
+
+class YTChannels(Model):
+    id = fields.IntField(pk=True)
+    channel_id = fields.CharField(max_length=100)
+    title = fields.CharField(max_length=100)
+    description = fields.TextField()
+    published_at = fields.DatetimeField()
+    thumbnail_url = fields.CharField(max_length=100)
+    view_count = fields.IntField()
+    subscriber_count = fields.IntField()
+    video_count = fields.IntField()
+    created_at = fields.DatetimeField(auto_now_add=True)
+    updated_at = fields.DatetimeField(auto_now=True)
+
+    class Meta:
+        table = "yt_channels"
 
 
 class Friends(Model):
@@ -16,6 +82,10 @@ class Friends(Model):
     archived = fields.BooleanField(default=False)
     created_at = fields.DatetimeField(auto_now_add=True)
     updated_at = fields.DatetimeField(auto_now=True)
+    test = fields.TextField(default="")
+
+    class Meta:
+        table = "friends"
 
 
 class Users(Model):
@@ -35,6 +105,7 @@ class Users(Model):
     is_admin = fields.BooleanField(default=False)
     created_at = fields.DatetimeField(auto_now_add=True)
     updated_at = fields.DatetimeField(auto_now=True)
+    test = fields.TextField(default="")
 
     @property
     def password(self):
@@ -65,16 +136,19 @@ class Users(Model):
 class YTClients(Model):
     id = fields.IntField(pk=True)
     user_id = fields.ForeignKeyField(
-        "models.Users", related_name="ytclients", on_delete=fields.CASCADE
+        "models.Users", related_name="yt_clients", on_delete=fields.CASCADE
     )
     created_at = fields.DatetimeField(auto_now_add=True)
     updated_at = fields.DatetimeField(auto_now=True)
 
+    class Meta:
+        table = "yt_clients"
 
-class Videos(Model):
+
+class YTVideos(Model):
     id = fields.IntField(pk=True)
     user_id = fields.ForeignKeyField(
-        "models.Users", related_name="videos", on_delete=fields.CASCADE
+        "models.Users", related_name="yt_videos", on_delete=fields.CASCADE
     )
     video_id = fields.TextField()
     video_url = fields.TextField()
@@ -85,27 +159,32 @@ class Videos(Model):
     credits_per_view = fields.IntField(default=3, max=30)
     created_at = fields.DatetimeField(auto_now_add=True)
 
+    class Meta:
+        table = "yt_videos"
 
-class WatchedVideos(Model):
+
+class YTVideosWatched(Model):
     id = fields.IntField(pk=True)
     user_id = fields.ForeignKeyField(
-        "models.Users", related_name="watched_videos", on_delete=fields.CASCADE
+        "models.Users", related_name="yt_videos_watched", on_delete=fields.CASCADE
     )
     video_id = fields.ForeignKeyField(
-        "models.Videos", related_name="watched_videos", on_delete=fields.CASCADE
+        "models.Videos", related_name="yt_videos_watched", on_delete=fields.CASCADE
     )
     ref_id = fields.ForeignKeyField(
-        "models.RefUrls", related_name="watched_videos", on_delete=fields.CASCADE
+        "models.RefUrls", related_name="yt_videos_watched", on_delete=fields.CASCADE
     )
     created_at = fields.DatetimeField(auto_now_add=True)
+
+    class Meta:
+        table = "yt_videos_watched"
 
 
 class RefUrls(Model):
     id = fields.IntField(pk=True)
-    ref_url = fields.TextField()
-    enable = fields.BooleanField(default=True)
-    archived = fields.BooleanField(default=False)
+    url = fields.TextField()
     created_at = fields.DatetimeField(auto_now_add=True)
+    updated_at = fields.DatetimeField(auto_now=True)
 
 
 class Navigation(Model):

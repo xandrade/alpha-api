@@ -25,6 +25,7 @@ from quart_auth import (
     Unauthorized,
     login_required,
 )
+from tortoise import Tortoise
 from tortoise.contrib.quart import register_tortoise
 from loguru import logger
 import uvloop
@@ -43,7 +44,7 @@ else:
 
 
 def create_app():
-    app = Quart(__name__.split(".")[0])
+    _app = Quart(__name__.split(".")[0])
     load_enviroment()
     for key in [
         "SECRET_KEY",
@@ -54,35 +55,66 @@ def create_app():
         "CACHE_TYPE",
         "QUART_ENV",
     ]:
-        app.config[key] = os.environ[key]
-    register_extensions(app)
-    register_blueprints(app)
-    register_errorhandlers(app)
-    configure_logger(app)
-    return app
+        _app.config[key] = os.environ[key]
+    register_extensions(_app)
+    register_blueprints(_app)
+    register_errorhandlers(_app)
+    configure_logger(_app)
+    return _app
 
 
-def register_extensions(app):
+def register_extensions(_app):
     """Register extensions."""
-    bcrypt.init_app(app)
-    auth_manager.init_app(app)
+    bcrypt.init_app(_app)
+    auth_manager.init_app(_app)
     auth_manager.user_class = User
     register_tortoise(
-        app,
+        _app,
         db_url=os.getenv("DATABASE_URL"),
-        modules={"models": ["app.user.models"]},
+        modules={
+            "models": [
+                "app.user.models",
+            ]
+        },
         generate_schemas=True,
     )
     return None
 
 
-def register_blueprints(app):
+async def do_migratation():
+    from aerich import Command
+
+    DATABASE_URL = "sqlite://./db/db.sqlite3"
+
+    TORTOISE_ORM = {
+        "connections": {"default": DATABASE_URL},
+        "apps": {
+            "alpha": {
+                "models": [
+                    "app.user.models",
+                    "aerich.models",
+                ],
+                "default_connection": "default",
+            },
+        },
+    }
+
+    # Tortoise.init_models(TORTOISE_ORM, "models")
+    # await Tortoise.generate_schemas()
+
+    command = Command(TORTOISE_ORM, "alpha")
+    await command.init()
+    await command.migrate("--name add_test")
+    await command.upgrade()
+
+
+def register_blueprints(_app):
     """Register blueprints."""
-    app.register_blueprint(api)
-    app.register_blueprint(auth)
+    _app.register_blueprint(api)
+    _app.register_blueprint(auth)
 
 
-def register_errorhandlers(app):
+def register_errorhandlers(_app):
     """Register error handlers."""
 
     async def render_error(error):
@@ -94,27 +126,28 @@ def register_errorhandlers(app):
     for errcode in [
         401,
     ]:  # 404, 500
-        app.errorhandler(errcode)(render_error)
+        _app.errorhandler(errcode)(render_error)
     return None
 
     """
-    @app.errorhandler(Unauthorized)
+    @_app.errorhandler(Unauthorized)
     async def redirect_to_login(*_: Exception):
         return redirect(url_for("authwall.login"))
     """
 
 
-def configure_logger(app):
+def configure_logger(_app):
     """Configure loggers."""
+    logging.basicConfig(level=logging.DEBUG)
     handler = logging.StreamHandler(sys.stdout)
-    if not app.logger.handlers:
-        app.logger.addHandler(handler)
+    if not _app.logger.handlers:
+        _app.logger.addHandler(handler)
 
 
-app = create_app()
+_app = create_app()
 
 # prevent cached responses
-@app.after_request
+@_app.after_request
 async def add_header(r):
     """
     Add headers to both force latest IE rendering engine or Chrome Frame,
@@ -124,9 +157,9 @@ async def add_header(r):
     return r
 
 
-@app.errorhandler(405)
-@app.errorhandler(403)
-# @app.errorhandler(401)
+@_app.errorhandler(405)
+@_app.errorhandler(403)
+# @_app.errorhandler(401)
 async def forbidden():
     return Response(
         jsonify(
@@ -150,16 +183,24 @@ async def forbidden():
     )
 
 
-@app.before_websocket
+@_app.before_websocket
 def make_session_permanent():
     logger.info("@websocket.before_request <--")
+
+
+"""
+@_app.before_serving
+async def starting_app():
+    #  await do_migratation()
+    pass
+"""
 
 
 def main():
     HOST = os.getenv("HOST", "0.0.0.0")
     PORT = os.getenv("PORT", 5000)
 
-    app.run(
+    _app.run(
         host=HOST,
         port=PORT,
         debug=False,
