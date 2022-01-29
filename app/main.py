@@ -25,7 +25,7 @@ from quart_auth import (
     Unauthorized,
     login_required,
 )
-from tortoise import Tortoise
+from tortoise import Tortoise, run_async
 from tortoise.contrib.quart import register_tortoise
 from loguru import logger
 import uvloop
@@ -57,6 +57,7 @@ def create_app():
     ]:
         _app.config[key] = os.environ[key]
     register_extensions(_app)
+    # run_async(do_migratation())
     register_blueprints(_app)
     register_errorhandlers(_app)
     configure_logger(_app)
@@ -71,41 +72,10 @@ def register_extensions(_app):
     register_tortoise(
         _app,
         db_url=os.getenv("DATABASE_URL"),
-        modules={
-            "models": [
-                "app.user.models",
-            ]
-        },
+        modules={"models": ["app.user.models", "aerich.models"]},
         generate_schemas=True,
     )
     return None
-
-
-async def do_migratation():
-    from aerich import Command
-
-    DATABASE_URL = "sqlite://./db/db.sqlite3"
-
-    TORTOISE_ORM = {
-        "connections": {"default": DATABASE_URL},
-        "apps": {
-            "alpha": {
-                "models": [
-                    "app.user.models",
-                    "aerich.models",
-                ],
-                "default_connection": "default",
-            },
-        },
-    }
-
-    # Tortoise.init_models(TORTOISE_ORM, "models")
-    # await Tortoise.generate_schemas()
-
-    command = Command(TORTOISE_ORM, "alpha")
-    await command.init()
-    await command.migrate("--name add_test")
-    await command.upgrade()
 
 
 def register_blueprints(_app):
@@ -188,12 +158,9 @@ def make_session_permanent():
     logger.info("@websocket.before_request <--")
 
 
-"""
 @_app.before_serving
 async def starting_app():
-    #  await do_migratation()
-    pass
-"""
+    await Tortoise.generate_schemas()
 
 
 def main():

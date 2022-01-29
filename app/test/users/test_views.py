@@ -4,7 +4,7 @@ import pytest
 from tortoise.contrib import test
 
 
-from app.user.models import Users, Friends, Videos, WatchedVideos, RefUrls
+from app.user.models import Users, Friends, YTVideos, YTVideosWatched, RefUrls
 
 
 @pytest.mark.asyncio

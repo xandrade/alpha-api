@@ -1,25 +1,10 @@
 from typing import Optional
 
 from quart.ctx import AppContext
-from tortoise.models import Model
-from tortoise import fields
+from tortoise import Model, fields
 from quart_auth import AuthUser
 
 from app.extensions import bcrypt
-
-
-__models__ = [
-    "Friends",
-    "Users",
-    "YTClients",
-    "YTVideos",
-    "YTVideosWatched",
-    "YTChannels",
-    "YTPlaylists",
-    "YTPlaylistItems",
-    "RefUrls",
-    "Navigation",
-]
 
 
 class YTPlaylistItems(Model):
@@ -105,7 +90,6 @@ class Users(Model):
     is_admin = fields.BooleanField(default=False)
     created_at = fields.DatetimeField(auto_now_add=True)
     updated_at = fields.DatetimeField(auto_now=True)
-    test = fields.TextField(default="")
 
     @property
     def password(self):
@@ -115,8 +99,6 @@ class Users(Model):
     @password.setter
     def password(self, value):
         """Set password."""
-        from passlib.context import CryptContext
-
         self._password = bcrypt.generate_password_hash(value)
 
     def check_password(self, value):
@@ -169,7 +151,7 @@ class YTVideosWatched(Model):
         "models.Users", related_name="yt_videos_watched", on_delete=fields.CASCADE
     )
     video_id = fields.ForeignKeyField(
-        "models.Videos", related_name="yt_videos_watched", on_delete=fields.CASCADE
+        "models.YTVideos", related_name="yt_videos_watched", on_delete=fields.CASCADE
     )
     ref_id = fields.ForeignKeyField(
         "models.RefUrls", related_name="yt_videos_watched", on_delete=fields.CASCADE
@@ -230,3 +212,17 @@ class User(AuthUser):
     async def given_name(self):
         await self._resolve()
         return self._given_name
+
+
+__models__ = [
+    Friends,
+    Users,
+    YTClients,
+    YTVideos,
+    YTVideosWatched,
+    YTChannels,
+    YTPlaylists,
+    YTPlaylistItems,
+    RefUrls,
+    Navigation,
+]
