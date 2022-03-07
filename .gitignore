@@ -130,3 +130,6 @@ dmypy.json
 
 # DBs
 *.sqlite3
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
