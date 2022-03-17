@@ -5,12 +5,12 @@ sequenceDiagram
     participant Bed
     participant Coffe
     participant Work
-    Bed->>Coffe: loads html w/ iframe url
-    Coffe->>Work: request template
-    Work->>Coffe: html & javascript
-    Coffe->>Work: iframe ready
-    Bed->>Coffe: set mermaid data on iframe
-    Coffe->>Work: render mermaid
+    Bed->>Coffe: Energize the daty
+    Coffe->>Work: Get ready!
+    Work->>Coffe: Recharge energy
+    Coffe->>Work: Here we go!
+    Bed->>Coffe: Oh please
+    Coffe->>Work: 100%
 ```
 
 API for Alpha system
