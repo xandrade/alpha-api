@@ -8,7 +8,7 @@ sequenceDiagram
     Bed->>Coffe: It's a Beautiful Day
     Coffe->>Work: Get ready!
     Work->>Coffe: Time to recharge
-    Coffe->>Coffe: Repete
+    Coffe->>Coffe: Repeat
 ```
 
 API for Alpha system
