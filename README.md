@@ -6,8 +6,8 @@ sequenceDiagram
     participant Coffe
     participant Work
     Bed->>Coffe: loads html w/ iframe url
-    Coffe->>viewscreen: request template
-    viewscreen->>iframe: html & javascript
+    Coffe->>Work: request template
+    Work->>Coffe: html & javascript
     Coffe->>Work: iframe ready
     Bed->>iframe: set mermaid data on iframe
     Coffe->>Work: render mermaid
