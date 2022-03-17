@@ -3,12 +3,12 @@
 ```mermaid
 sequenceDiagram
     participant Bed
-    participant Coffe
+    participant Coffee
     participant Work
-    Bed->>Coffe: It's a Beautiful Day
-    Coffe->>Work: Get ready!
-    Work->>Coffe: Time to recharge
-    Coffe->>Coffe: Repeat
+    Bed->>Coffee: It's a Beautiful Day
+    Coffee->>Work: Get ready!
+    Work->>Coffee: Time to recharge
+    Coffee->>Coffee: Repeat
 ```
 
 API for Alpha system
