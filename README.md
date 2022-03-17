@@ -9,8 +9,7 @@ sequenceDiagram
     Coffe->>Work: Get ready!
     Work->>Coffe: Recharge energy
     Coffe->>Work: Here we go!
-    Bed->>Coffe: Oh please
-    Coffe->>Work: 100%
+    Coffe->>Coffe: Repete
 ```
 
 API for Alpha system
