@@ -5,10 +5,9 @@ sequenceDiagram
     participant Bed
     participant Coffe
     participant Work
-    Bed->>Coffe: Energize the daty
+    Bed->>Coffe: It's a Beautiful Day
     Coffe->>Work: Get ready!
-    Work->>Coffe: Recharge energy
-    Coffe->>Work: Here we go!
+    Work->>Coffe: Time to recharge
     Coffe->>Coffe: Repete
 ```
 
