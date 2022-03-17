@@ -9,7 +9,7 @@ sequenceDiagram
     Coffe->>Work: request template
     Work->>Coffe: html & javascript
     Coffe->>Work: iframe ready
-    Bed->>iframe: set mermaid data on iframe
+    Bed->>Coffe: set mermaid data on iframe
     Coffe->>Work: render mermaid
 ```
 
