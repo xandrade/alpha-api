@@ -17,3 +17,4 @@ quart-bcrypt
 pytest-asyncio
 requests
 youtube-dl
+jinja2==3.0.3
