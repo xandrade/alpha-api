@@ -391,6 +391,11 @@ async def get_websocket_from_session(id):
 
 async def send_message(websocket, message):
     global clients
+    
+    if websocket.writer.transport._conn_lost:
+        clients.discard(websocket)
+        return
+    
     await websocket.send(json.dumps(message))
     websocket.alpha["last_request"] = message
     if message == {"request": "kill"}:
