@@ -80,8 +80,12 @@ def register_extensions(_app):
 
 def register_blueprints(_app):
     """Register blueprints."""
+    logger.info("Registering blueprints.")
+    logger.info("Registering api blueprints.")
     _app.register_blueprint(api)
+    logger.info("Register auth blueprints.")
     _app.register_blueprint(auth)
+    logger.info("Blueprints regitered")
 
 
 def register_errorhandlers(_app):
