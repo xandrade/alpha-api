@@ -170,7 +170,7 @@ def main():
     _app.run(
         host=HOST,
         port=PORT,
-        debug=False,
+        debug=True,
         logging=True,
         reload=True,
     )
