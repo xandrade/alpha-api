@@ -392,14 +392,17 @@ async def get_websocket_from_session(id):
 async def send_message(websocket, message):
     global clients
 
-    if websocket.writer.transport._conn_lost:
-        clients.discard(websocket)
+    try:
+        await websocket.send(json.dumps(message))
+    except Exception as e:
+        logger.error(f"In send_message. Error: {e}")
+        clients.discard(websocket._get_current_object())
+        logger.info(f"{len(clients)} clients connected")
         return
 
-    await websocket.send(json.dumps(message))
     websocket.alpha["last_request"] = message
     if message == {"request": "kill"}:
-        clients.discard(websocket)
+        clients.discard(websocket._get_current_object())
 
 
 async def send_message_to_all(message):
