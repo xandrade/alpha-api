@@ -163,6 +163,13 @@ async def starting_app():
     await Tortoise.generate_schemas()
 
 
+async def wrapper_app(scope, receive, send):
+    try:
+        await _app(scope, receive, send)
+    except Exception as e:
+        logger.exception(e)
+
+
 def main():
     HOST = os.getenv("HOST", "0.0.0.0")
     PORT = os.getenv("PORT", 5000)
