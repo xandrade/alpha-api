@@ -1,6 +1,6 @@
 # template https://github.com/jamescurtin/demo-cookiecutter-flask/blob/master/my_flask_app/app.py
 
-from imp import reload
+from importlib import reload
 import os
 import threading
 import logging
@@ -29,7 +29,7 @@ from tortoise import Tortoise, run_async
 from tortoise.contrib.quart import register_tortoise
 from loguru import logger
 import uvloop
-from .extensions import bcrypt, auth_manager
+from app.extensions import bcrypt, auth_manager
 
 from app.endpoints.api import api
 from app.user.views import auth
