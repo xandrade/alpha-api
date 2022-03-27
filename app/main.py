@@ -177,7 +177,7 @@ def main():
     _app.run(
         host=HOST,
         port=PORT,
-        debug=True,
+        debug=False,
         logging=True,
         reload=True,
     )
