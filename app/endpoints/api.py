@@ -396,13 +396,13 @@ async def send_message(websocket, message):
         await websocket.send(json.dumps(message))
     except Exception as e:
         logger.error(f"In send_message. Error: {e}")
-        clients.discard(websocket._get_current_object())
+        clients.discard(websocket)
         logger.info(f"{len(clients)} clients connected")
         return
 
     websocket.alpha["last_request"] = message
     if message == {"request": "kill"}:
-        clients.discard(websocket._get_current_object())
+        clients.discard(websocket)
 
 
 async def send_message_to_all(message):
