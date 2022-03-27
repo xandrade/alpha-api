@@ -2,6 +2,7 @@ wheel
 quart
 tortoise-orm[asyncpg]
 tortoise-orm[accel]
+aerich
 uvloop
 hypercorn[uvloop]
 email_validator
