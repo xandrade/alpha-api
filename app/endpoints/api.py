@@ -391,11 +391,11 @@ async def get_websocket_from_session(id):
 
 async def send_message(websocket, message):
     global clients
-    
+
     if websocket.writer.transport._conn_lost:
         clients.discard(websocket)
         return
-    
+
     await websocket.send(json.dumps(message))
     websocket.alpha["last_request"] = message
     if message == {"request": "kill"}:
@@ -794,7 +794,7 @@ async def dashboard():
     """
     html = html.replace("||script||", script)
 
-    from app.main import app
+    from app.main import _app as app
 
     if app.config["QUART_ENV"] == "DEVELOPMENT":
         html = html.replace("||wsocket||", "ws")
@@ -809,7 +809,7 @@ async def html():
 
     logger.debug(request.full_path)
 
-    from app.main import app
+    from app.main import _app as app
 
     wsocket = "wss"
     if app.config["QUART_ENV"] == "DEVELOPMENT":
