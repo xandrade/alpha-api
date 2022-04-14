@@ -1,16 +1,5 @@
 # alpha-api
 
-```mermaid
-sequenceDiagram
-    participant Bed
-    participant Coffee
-    participant Work
-    Bed->>Coffee: It's a Beautiful Day
-    Coffee->>Work: Get ready!
-    Work->>Coffee: Time to recharge
-    Coffee->>Coffee: Repeat
-```
-
 API for Alpha system
 
 # Cloning the repository
