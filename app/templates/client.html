@@ -109,11 +109,14 @@
                     }));
                 } else if (request == "ping") {
                     console.log('PING received');
+                    console.log('PING received', windowObjectReference.length);
+                    temp = windowObjectReference;
+                    console.log(temp.length);
                     console.log({ windowObjectReference });
                     console.log(windowObjectReference);
                     console.dir(windowObjectReference);
                     console.debug(windowObjectReference);
-                    console.log('PING received' + windowObjectReference.length);
+
                     ws.send(JSON.stringify({
                         'status': 'pong'
                     }));
