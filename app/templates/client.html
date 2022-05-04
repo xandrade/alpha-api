@@ -112,7 +112,7 @@
                     console.log(windowObjectReference);
                     console.dir(windowObjectReference);
                     console.debug(windowObjectReference);
-                    console.log(windowObjectReference.length);
+                    console.log('PING received' + windowObjectReference.length);
                     ws.send(JSON.stringify({
                         'status': 'pong'
                     }));
