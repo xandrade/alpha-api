@@ -108,12 +108,14 @@
                         'status': 'stopped'
                     }));
                 } else if (request == "ping") {
-                    console.log('ping');
+                    console.log('PING received');
+                    console.log(windowObjectReference);
                     ws.send(JSON.stringify({
                         'status': 'pong'
                     }));
                 } else if (request == "pong") {
-                    //console.log('PONG received');
+                    console.log('PONG received');
+                    console.log(windowObjectReference);
                 } else if (request == "kill") {
                     closeWin();
                     ws.send(JSON.stringify({
