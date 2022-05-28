@@ -823,3 +823,39 @@ async def html():
         ),
         200,
     )
+
+
+@api.route("/ip", methods=["POST"])
+async def set_ip():
+
+    from app.main import _app as app
+
+    data = await request.get_json()
+    ip = data.get("ip")
+    app.data["ip_address"] = ip
+    app.data["ip_last_seen"] = datetime.now()
+
+    return jsonify(
+        {
+            "status": "success",
+            "message": f"IP address set to {ip}",
+        },
+        200,
+    )
+
+
+@api.route("/ip", methods=["GET"])
+async def get_ip():
+
+    from app.main import _app as app
+
+    return jsonify(
+        {
+            "status": "success",
+            "ip": {
+                "address": app.data["ip_address"],
+                "last_seen": app.data["ip_last_seen"],
+            },
+        },
+        200,
+    )
