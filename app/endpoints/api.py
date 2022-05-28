@@ -1,5 +1,6 @@
 from datetime import datetime
 from email import message
+from ipaddress import ip_address
 import random
 import asyncio
 from functools import wraps
@@ -55,6 +56,10 @@ printed = f.getvalue()
 # print(f.read())
 # logger.info(f.read())
 logger.info(printed)
+
+# global variable for it
+ip_address = None
+ip_last_seen = None
 
 
 clients = set()
@@ -828,17 +833,16 @@ async def html():
 @api.route("/ip", methods=["POST"])
 async def set_ip():
 
-    from app.main import _app as app
+    global ip_address, ip_last_seen
 
     data = await request.get_json()
-    ip = data.get("ip")
-    app.data["ip_address"] = ip
-    app.data["ip_last_seen"] = datetime.now()
+    ip_address = data.get("ip")
+    ip_last_seen = datetime.now()
 
     return jsonify(
         {
             "status": "success",
-            "message": f"IP address set to {ip}",
+            "message": f"IP address set to {ip_address} at {ip_last_seen}",
         },
         200,
     )
@@ -847,14 +851,14 @@ async def set_ip():
 @api.route("/ip", methods=["GET"])
 async def get_ip():
 
-    from app.main import _app as app
+    global ip_address, ip_last_seen
 
     return jsonify(
         {
             "status": "success",
             "ip": {
-                "address": app.data["ip_address"],
-                "last_seen": app.data["ip_last_seen"],
+                "address": ip_address,
+                "last_seen": ip_last_seen,
             },
         },
         200,
