@@ -859,6 +859,6 @@ async def get_ip():
                 "address": ip_address,
                 "last_seen": ip_last_seen,
             },
-        })
+        }),
         200
     )
