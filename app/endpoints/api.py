@@ -185,21 +185,20 @@ async def add_friend():
         valid = validate_email(email, dns_resolver=resolver)
         email = valid.email
     except EmailNotValidError as e:
-        return jsonify(
+        return (jsonify(
             {
                 "status": "error",
                 "message": "Uh Oh! Something went wrong",
-            },
-            400,
-        )
+            }),
+            400)
 
     friend = await Friends.create(given_name=name, email=email)
 
-    return jsonify(
+    return (jsonify(
         {
             "status": "success",
             "message": "Thank you for subscribing to our Friend list!",
-        },
+        }),
         200,
     )
 
@@ -624,7 +623,7 @@ async def client_actions(action, sec_id):
                 message = await get_next_video()
             await send_message(client, message)
             client.alpha["last_request"] = message
-    return jsonify({"status": "success"})
+    return jsonify({"status": "success"}), 200
 
 
 @api.route("/dashboard", methods=["GET"])
@@ -839,12 +838,12 @@ async def set_ip():
     ip_address = data.get("ip")
     ip_last_seen = datetime.now()
 
-    return jsonify(
+    return (jsonify(
         {
             "status": "success",
             "message": f"IP address set to {ip_address} at {ip_last_seen}",
-        },
-        200,
+        }),
+        200
     )
 
 
@@ -853,13 +852,13 @@ async def get_ip():
 
     global ip_address, ip_last_seen
 
-    return jsonify(
+    return (jsonify(
         {
             "status": "success",
             "ip": {
                 "address": ip_address,
                 "last_seen": ip_last_seen,
             },
-        },
-        200,
+        })
+        200
     )
